@@ -85,6 +85,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "cancel": "Cancel",
         "submit": "Submit"
       },
+      "sections": {
+        "payment_config": "Payment Configuration"
+      },
       "messages": {
         "success": "Saved successfully"
       }
@@ -161,7 +164,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "planManagement": "Plan Management",
     "orderManagement": "Order Management",
     "couponManagement": "Coupon Management",
+    "giftCardManagement": "Gift Card Management",
     "userManagement": "User Management",
+    "trafficResetLogs": "Traffic Reset Logs",
     "ticketManagement": "Ticket Management"
   },
   "plugin": {
@@ -170,10 +175,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "search": {
       "placeholder": "Search plugin name or description..."
     },
-    "category": {
-      "placeholder": "Select Category",
-      "all": "All",
-      "other": "Other"
+    "type": {
+      "placeholder": "Select Plugin Type",
+      "all": "All Types"
     },
     "tabs": {
       "all": "All Plugins",
@@ -182,14 +186,22 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     },
     "status": {
       "enabled": "Enabled",
-      "disabled": "Disabled"
+      "disabled": "Disabled",
+      "not_installed": "Not Installed",
+      "protected": "Protected",
+      "filter_placeholder": "Install Status",
+      "all": "All Status",
+      "installed": "Installed",
+      "available": "Available"
     },
     "button": {
       "install": "Install",
+      "upgrade": "Upgrade",
       "config": "Configure",
       "enable": "Enable",
       "disable": "Disable",
-      "uninstall": "Uninstall"
+      "uninstall": "Uninstall",
+      "readme": "View Documentation"
     },
     "upload": {
       "button": "Upload Plugin",
@@ -213,16 +225,26 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "description": "Are you sure you want to uninstall this plugin? Plugin data will be cleared after uninstallation.",
       "button": "Uninstall"
     },
+    "upgrade": {
+      "title": "Upgrade Plugin",
+      "description": "Are you sure you want to upgrade this plugin? The plugin will be temporarily unavailable during the upgrade process.",
+      "button": "Upgrade"
+    },
     "config": {
       "title": "Configuration",
       "description": "Modify plugin configuration",
       "save": "Save",
       "cancel": "Cancel"
     },
+    "readme": {
+      "title": "Plugin Documentation"
+    },
     "author": "Author",
     "messages": {
       "installSuccess": "Plugin installed successfully",
       "installError": "Failed to install plugin",
+      "upgradeSuccess": "Plugin upgraded successfully",
+      "upgradeError": "Failed to upgrade plugin",
       "uninstallSuccess": "Plugin uninstalled successfully",
       "uninstallError": "Failed to uninstall plugin",
       "enableSuccess": "Plugin enabled successfully",
@@ -415,20 +437,60 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "description": "Enter the allowed email suffixes, one per line"
           }
         },
-        "recaptcha": {
+        "captcha": {
           "enable": {
-            "label": "Enable reCAPTCHA",
-            "description": "When enabled, users will need to pass reCAPTCHA verification when registering."
+            "label": "Enable Captcha",
+            "description": "When enabled, users will need to pass captcha verification when registering."
           },
-          "key": {
-            "label": "reCAPTCHA Key",
-            "placeholder": "Enter reCAPTCHA key",
-            "description": "Enter your reCAPTCHA key"
+          "type": {
+            "label": "Captcha Type",
+            "description": "Select the captcha service type to use",
+            "options": {
+              "recaptcha": "Google reCAPTCHA v2",
+              "recaptcha-v3": "Google reCAPTCHA v3",
+              "turnstile": "Cloudflare Turnstile"
+            }
           },
-          "siteKey": {
-            "label": "reCAPTCHA Site Key",
-            "placeholder": "Enter reCAPTCHA site key",
-            "description": "Enter your reCAPTCHA site key"
+          "recaptcha": {
+            "key": {
+              "label": "reCAPTCHA Key",
+              "placeholder": "Enter reCAPTCHA key",
+              "description": "Enter your reCAPTCHA key"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA Site Key",
+              "placeholder": "Enter reCAPTCHA site key",
+              "description": "Enter your reCAPTCHA site key"
+            }
+          },
+          "recaptcha_v3": {
+            "secretKey": {
+              "label": "reCAPTCHA v3 Key",
+              "placeholder": "Enter reCAPTCHA v3 key",
+              "description": "Enter your reCAPTCHA v3 server key"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA v3 Site Key",
+              "placeholder": "Enter reCAPTCHA v3 site key",
+              "description": "Enter your reCAPTCHA v3 site key"
+            },
+            "scoreThreshold": {
+              "label": "Score Threshold",
+              "placeholder": "0.5",
+              "description": "Set verification score threshold (0-1), higher scores indicate more likely human behavior"
+            }
+          },
+          "turnstile": {
+            "secretKey": {
+              "label": "Turnstile Key",
+              "placeholder": "Enter Turnstile key",
+              "description": "Enter your Cloudflare Turnstile key"
+            },
+            "siteKey": {
+              "label": "Turnstile Site Key",
+              "placeholder": "Enter Turnstile site key",
+              "description": "Enter your Cloudflare Turnstile site key"
+            }
           }
         },
         "registerLimit": {
@@ -443,8 +505,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           },
           "expire": {
             "label": "Limit Duration",
-            "placeholder": "Enter limit duration in hours",
-            "description": "Duration of the registration limit in hours"
+            "placeholder": "Enter limit duration in minutes",
+            "description": "Duration of the registration limit in minutes"
           }
         },
         "passwordLimit": {
@@ -459,8 +521,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           },
           "expire": {
             "label": "Lock Duration",
-            "placeholder": "Enter lock duration in hours",
-            "description": "Duration of the account lock in hours"
+            "placeholder": "Enter lock duration in minutes",
+            "description": "Duration of the account lock in minutes"
           }
         }
       }
@@ -514,7 +576,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "subscribe_path": {
         "title": "Subscription Path",
         "description": "Subscription path, modifying will change the original subscribe path",
-        "current_format": "Current subscription path format: {path}/xxxxxxxxxx"
+        "current_format": "Current subscription path format: {path}/xxxxxxxxxx",
+        "restart_tip": "You may need to restart the service for the new subscribe path to take effect."
       },
       "show_info_to_server": {
         "title": "Show Subscription Info in Nodes",
@@ -724,8 +787,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "success": "Webhook set successfully"
       },
       "bot_enable": {
-        "title": "Enable Bot Notifications",
-        "description": "When enabled, the bot will send basic notifications to administrators and users who have bound their Telegram accounts."
+        "title": "Enable Telegram Binding Guide",
+        "description": "When enabled, a Telegram binding guide will be displayed on the user side to help users bind their Telegram accounts for notifications."
       },
       "discuss_link": {
         "title": "Group Link",
@@ -798,6 +861,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "surge": {
         "title": "Surge Template",
         "description": "Configure subscription template format for Surge"
+      },
+      "surfboard": {
+        "title": "Surfboard Template",
+        "description": "Configure subscription template format for Surfboard"
       }
     }
   },
@@ -862,6 +929,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "close": "Close",
     "delete": {
       "success": "Deleted successfully",
       "failed": "Failed to delete"
@@ -886,6 +954,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "error": "Copy failed",
       "errorLog": "Error copying to clipboard"
     },
+    "submit": "Submit",
+    "saving": "Saving...",
     "table": {
       "noData": "No data available",
       "pagination": {
@@ -897,6 +967,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "previousPage": "Previous page",
         "nextPage": "Next page",
         "lastPage": "Go to last page"
+      },
+      "viewOptions": {
+        "button": "Columns",
+        "label": "Toggle columns"
       }
     },
     "update": {
@@ -909,6 +983,15 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "updating": "Updating...",
       "updateSuccess": "Update successful, system will restart shortly",
       "updateFailed": "Update failed, please try again later"
+    },
+    "time": {
+      "day": "day",
+      "hour": " hour(s)"
+    },
+    "reset": "Reset",
+    "export": "Export",
+    "currency": {
+      "yuan": "Yuan"
     }
   },
   "dashboard": {
@@ -1026,7 +1109,19 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "result": "Result",
         "duration": "Duration",
         "attempts": "Attempts",
-        "nextRetry": "Next Retry"
+        "nextRetry": "Next Retry",
+        "failedJobsDetailTitle": "Failed Jobs Details",
+        "viewFailedJobs": "View Failed Jobs",
+        "jobDetailTitle": "Job Details",
+        "time": "Time",
+        "queue": "Queue",
+        "name": "Job Name",
+        "exception": "Exception",
+        "noFailedJobs": "No failed jobs",
+        "connection": "Connection",
+        "payload": "Job Payload",
+        "viewDetail": "View Details",
+        "action": "Action"
       },
       "actions": {
         "retry": "Retry",
@@ -1038,11 +1133,414 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "loading": "Loading queue status...",
       "error": "Failed to load queue status"
     },
+    "systemLog": {
+      "title": "System Logs",
+      "description": "View system operation logs",
+      "viewAll": "View All",
+      "level": "Level",
+      "time": "Time",
+      "message": "Message",
+      "logTitle": "Title",
+      "method": "Method",
+      "action": "Action",
+      "context": "Context",
+      "search": "Search logs...",
+      "noLogs": "No logs available",
+      "noInfoLogs": "No info logs available",
+      "noWarningLogs": "No warning logs available",
+      "noErrorLogs": "No error logs available",
+      "noSearchResults": "No matching logs found",
+      "detailTitle": "Log Details",
+      "viewDetail": "View Details",
+      "host": "Host",
+      "ip": "IP Address",
+      "uri": "URI",
+      "requestData": "Request Data",
+      "exception": "Exception",
+      "totalLogs": "Total logs",
+      "tabs": {
+        "all": "All",
+        "info": "Info",
+        "warning": "Warning",
+        "error": "Error"
+      },
+      "filter": {
+        "searchAndLevel": "Filter results: {{count}} logs containing \\\"{{keyword}}\\\" with level \\\"{{level}}\\\"",
+        "searchOnly": "Search results: {{count}} logs containing \\\"{{keyword}}\\\"",
+        "levelOnly": "Filter results: {{count}} logs with level \\\"{{level}}\\\"",
+        "reset": "Reset Filters"
+      },
+      "clearLogs": "Clear Logs",
+      "clearDays": "Clear Days",
+      "clearDaysDesc": "Clear logs older than how many days (0-365 days, 0 means today)",
+      "clearLevel": "Log Level",
+      "clearLimit": "Batch Limit",
+      "clearLimitDesc": "Batch clear quantity limit (100-10000 records)",
+      "clearPreview": "Clear Preview",
+      "getStats": "Get Statistics",
+      "cutoffDate": "Cutoff Date",
+      "willClear": "Will Clear",
+      "logsUnit": " logs",
+      "clearWarning": "This operation cannot be undone, please proceed with caution!",
+      "clearing": "Clearing...",
+      "confirmClear": "Confirm Clear",
+      "clearSuccess": "Clear completed! {{count}} logs cleared",
+      "clearFailed": "Clear failed",
+      "getStatsFailed": "Failed to get clear statistics",
+      "clearLogsFailed": "Failed to clear logs"
+    },
+    "common": {
+      "refresh": "Refresh",
+      "close": "Close",
+      "pagination": "Page {{current}}/{{total}}, {{count}} items total"
+    },
     "search": {
       "placeholder": "Search menus and functions...",
       "title": "Menu Navigation",
       "noResults": "No results found",
       "loading": "Searching..."
+    }
+  },
+  "giftCard": {
+    "title": "Gift Card Management",
+    "description": "Manage gift card templates, redemption codes, and usage records.",
+    "tabs": {
+      "templates": "Template Management",
+      "codes": "Redemption Code Management",
+      "usages": "Usage Records",
+      "statistics": "Statistics"
+    },
+    "template": {
+      "title": "Template Management",
+      "description": "Manage gift card templates, including creating, editing, and deleting templates.",
+      "table": {
+        "title": "Template List",
+        "columns": {
+          "id": "ID",
+          "name": "Name",
+          "type": "Type",
+          "status": "Status",
+          "sort": "Sort",
+          "rewards": "Rewards",
+          "created_at": "Created At",
+          "actions": "Actions",
+          "no_rewards": "No Rewards"
+        }
+      },
+      "form": {
+        "add": "Add Template",
+        "edit": "Edit Template",
+        "name": {
+          "label": "Template Name",
+          "placeholder": "Please enter template name",
+          "required": "Please enter template name"
+        },
+        "sort": {
+          "label": "Sort",
+          "placeholder": "Smaller numbers appear first"
+        },
+        "type": {
+          "label": "Type",
+          "placeholder": "Please select gift card type"
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "Please enter gift card description"
+        },
+        "status": {
+          "label": "Status",
+          "description": "When disabled, this template cannot generate or redeem new gift cards."
+        },
+        "display": {
+          "title": "Display Effect"
+        },
+        "theme_color": {
+          "label": "Theme Color"
+        },
+        "icon": {
+          "label": "Icon",
+          "placeholder": "Please enter icon URL"
+        },
+        "background_image": {
+          "label": "Background Image",
+          "placeholder": "Please enter background image URL"
+        },
+        "conditions": {
+          "title": "Usage Conditions",
+          "new_user_max_days": {
+            "label": "New User Registration Days Limit",
+            "placeholder": "Example: 7 (Only for users registered within 7 days)"
+          },
+          "new_user_only": {
+            "label": "New Users Only"
+          },
+          "paid_user_only": {
+            "label": "Paid Users Only"
+          },
+          "require_invite": {
+            "label": "Require Invitation Relationship"
+          },
+          "allowed_plans": {
+            "label": "Allowed Plans",
+            "placeholder": "Select plans allowed for redemption (leave empty for no restriction)"
+          },
+          "disallowed_plans": {
+            "label": "Disallowed Plans",
+            "placeholder": "Select plans forbidden for redemption (leave empty for no restriction)"
+          }
+        },
+        "limits": {
+          "title": "Usage Limits",
+          "max_use_per_user": {
+            "label": "Max Uses Per User",
+            "placeholder": "Leave empty for no limit"
+          },
+          "cooldown_hours": {
+            "label": "Cooldown Hours for Same Type",
+            "placeholder": "Leave empty for no limit"
+          },
+          "invite_reward_rate": {
+            "label": "Inviter Reward Rate",
+            "placeholder": "Example: 0.2 (represents 20%)",
+            "description": "When user has an inviter, inviter reward = balance reward × this rate"
+          }
+        },
+        "rewards": {
+          "title": "Rewards",
+          "balance": {
+            "label": "Reward Balance (Yuan)",
+            "short_label": "Balance",
+            "placeholder": "Please enter reward amount (Yuan)"
+          },
+          "transfer_enable": {
+            "label": "Reward Traffic (GB)",
+            "short_label": "Traffic",
+            "placeholder": "Please enter reward traffic (GB)"
+          },
+          "expire_days": {
+            "label": "Extend Validity (Days)",
+            "short_label": "Validity",
+            "placeholder": "Please enter extension days"
+          },
+          "transfer": {
+            "label": "Reward Traffic (Bytes)",
+            "placeholder": "Please enter reward traffic (bytes)"
+          },
+          "days": {
+            "label": "Extend Validity (Days)",
+            "placeholder": "Please enter extension days"
+          },
+          "device_limit": {
+            "label": "Increase Device Count",
+            "short_label": "Devices",
+            "placeholder": "Please enter increased device count"
+          },
+          "reset_package": {
+            "label": "Reset Monthly Traffic",
+            "description": "When enabled, redemption will clear the user's current plan's used traffic."
+          },
+          "reset_count": {
+            "description": "This type of card will reset the user's monthly traffic usage."
+          },
+          "task_card": {
+            "description": "Specific rewards for task gift cards will be configured in the task system."
+          },
+          "plan_id": {
+            "label": "Specified Plan",
+            "short_label": "Plan",
+            "placeholder": "Please select a plan"
+          },
+          "plan_validity_days": {
+            "label": "Plan Validity (Days)",
+            "short_label": "Plan Validity",
+            "placeholder": "Leave empty to use plan default validity"
+          },
+          "random_rewards": {
+            "label": "Random Reward Pool",
+            "add": "Add Random Reward Item",
+            "weight": "Weight"
+          }
+        },
+        "special_config": {
+          "title": "Special Configuration",
+          "start_time": {
+            "label": "Event Start Time",
+            "placeholder": "Please select start date"
+          },
+          "end_time": {
+            "label": "Event End Time",
+            "placeholder": "Please select end date"
+          },
+          "festival_bonus": {
+            "label": "Festival Reward Multiplier",
+            "placeholder": "Example: 1.5 (represents 1.5x)"
+          }
+        },
+        "submit": {
+          "saving": "Saving...",
+          "save": "Save"
+        }
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteConfirm": {
+          "title": "Confirm Delete",
+          "description": "This action will permanently delete this template. Are you sure you want to continue?",
+          "confirmText": "Delete"
+        }
+      }
+    },
+    "code": {
+      "title": "Redemption Code Management",
+      "form": {
+        "generate": "Generate Redemption Codes",
+        "template_id": {
+          "label": "Select Template",
+          "placeholder": "Please select a template to generate redemption codes"
+        },
+        "count": {
+          "label": "Generation Count"
+        },
+        "prefix": {
+          "label": "Custom Prefix (Optional)"
+        },
+        "expires_hours": {
+          "label": "Validity (Hours)"
+        },
+        "max_usage": {
+          "label": "Max Usage Count"
+        },
+        "download_csv": "Export CSV",
+        "submit": {
+          "generating": "Generating...",
+          "generate": "Generate Now"
+        }
+      },
+      "description": "Manage gift card redemption codes, including generation, viewing, and exporting codes.",
+      "generate": {
+        "title": "Generate Redemption Codes",
+        "template": "Select Template",
+        "count": "Generation Count",
+        "prefix": "Custom Prefix",
+        "expires_hours": "Validity (Hours)",
+        "max_usage": "Max Usage Count",
+        "submit": "Generate"
+      },
+      "table": {
+        "title": "Redemption Code List",
+        "columns": {
+          "id": "ID",
+          "code": "Redemption Code",
+          "template_name": "Template Name",
+          "status": "Status",
+          "expires_at": "Expires At",
+          "usage_count": "Used Count",
+          "max_usage": "Available Count",
+          "created_at": "Created At"
+        }
+      },
+      "actions": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "export": "Export",
+        "exportConfirm": {
+          "title": "Confirm Export",
+          "description": "This will export all redemption codes from the selected batch as a text file. Are you sure you want to continue?",
+          "confirmText": "Export"
+        }
+      },
+      "status": {
+        "0": "Unused",
+        "1": "Used",
+        "2": "Disabled",
+        "3": "Expired"
+      }
+    },
+    "usage": {
+      "title": "Usage Records",
+      "description": "View gift card usage records and detailed information.",
+      "table": {
+        "columns": {
+          "id": "ID",
+          "code": "Redemption Code",
+          "template_name": "Template Name",
+          "user_email": "User Email",
+          "rewards_given": "Rewards Given",
+          "invite_rewards": "Invitation Rewards",
+          "multiplier_applied": "Multiplier Applied",
+          "ip_address": "IP Address",
+          "created_at": "Usage Time",
+          "actions": "Actions"
+        }
+      },
+      "actions": {
+        "view": "View Details"
+      }
+    },
+    "statistics": {
+      "title": "Statistics",
+      "description": "View gift card statistics and usage analysis.",
+      "total": {
+        "title": "Overall Statistics",
+        "templates_count": "Total Templates",
+        "active_templates_count": "Active Templates",
+        "codes_count": "Total Redemption Codes",
+        "used_codes_count": "Used Redemption Codes",
+        "usages_count": "Usage Records"
+      },
+      "daily": {
+        "title": "Daily Usage",
+        "chart": "Usage Trend Chart"
+      },
+      "type": {
+        "title": "Type Statistics",
+        "chart": "Type Distribution Chart"
+      },
+      "dateRange": {
+        "label": "Date Range",
+        "start": "Start Date",
+        "end": "End Date"
+      }
+    },
+    "types": {
+      "1": "General Gift Card",
+      "2": "Plan Gift Card",
+      "3": "Mystery Gift Card",
+      "4": "Task Gift Card"
+    },
+    "common": {
+      "search": "Search gift cards...",
+      "reset": "Reset",
+      "filter": "Filter",
+      "export": "Export",
+      "refresh": "Refresh",
+      "back": "Back",
+      "close": "Close",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "loading": "Loading...",
+      "noData": "No Data",
+      "success": "Operation Successful",
+      "error": "Operation Failed"
+    },
+    "messages": {
+      "formInvalid": "Please check if the form input is correct",
+      "templateCreated": "Template created successfully",
+      "templateUpdated": "Template updated successfully",
+      "templateDeleted": "Template deleted successfully",
+      "codeGenerated": "Redemption codes generated successfully",
+      "generateCodeFailed": "Failed to generate redemption codes",
+      "codeStatusUpdated": "Redemption code status updated successfully",
+      "updateCodeStatusFailed": "Failed to update redemption code status",
+      "codesExported": "Redemption codes exported successfully",
+      "createTemplateFailed": "Failed to create template",
+      "updateTemplateFailed": "Failed to update template",
+      "deleteTemplateFailed": "Failed to delete template",
+      "loadDataFailed": "Failed to load data",
+      "codesGenerated": "Redemption codes generated successfully"
     }
   },
   "route": {
@@ -1156,6 +1654,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "basicInfo": "Basic Information",
       "amountInfo": "Amount Information",
       "timeInfo": "Time Information",
+      "commissionInfo": "Commission Information",
+      "commissionStatusActive": "Active",
       "addOrder": "Add Order",
       "assignOrder": "Assign Order",
       "fields": {
@@ -1169,7 +1669,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "refundAmount": "Refund Amount",
         "deductionAmount": "Deduction Amount",
         "createdAt": "Created At",
-        "updatedAt": "Updated At"
+        "updatedAt": "Updated At",
+        "commissionStatus": "Commission Status",
+        "commissionAmount": "Commission Amount",
+        "actualCommissionAmount": "Actual Commission",
+        "inviteUser": "Inviter",
+        "inviteUserId": "Inviter ID"
       },
       "placeholders": {
         "email": "Please enter user email",
@@ -1286,6 +1791,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "error": {
         "saveFailed": "Failed to save coupon"
+      },
+      "timeRange": {
+        "quickSet": "Quick Set",
+        "presets": {
+          "1week": "1 Week",
+          "2weeks": "2 Weeks",
+          "1month": "1 Month",
+          "3months": "3 Months",
+          "6months": "6 Months",
+          "1year": "1 Year"
+        }
       }
     },
     "period": {
@@ -1510,6 +2026,19 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "tooltip": "Groups that can subscribe to this node",
         "empty": "--"
       },
+      "loadStatus": {
+        "title": "Load Status",
+        "tooltip": "Server resource usage",
+        "noData": "No Data",
+        "details": "System Load Details",
+        "cpu": "CPU Usage",
+        "memory": "Memory Usage",
+        "swap": "Swap Usage",
+        "disk": "Disk Usage",
+        "lastUpdate": "Last Updated"
+      },
+      "customId": "Custom ID",
+      "originalId": "Original ID",
       "type": "Type",
       "actions": "Actions",
       "copyAddress": "Copy Connection Address",
@@ -1551,8 +2080,29 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "error": "Please enter a valid name"
       },
       "rate": {
-        "label": "Rate",
-        "error": "Please enter a valid rate"
+        "label": "Base Rate",
+        "error": "Base rate is required",
+        "error_numeric": "Base rate must be a number",
+        "error_gte_zero": "Base rate must be greater than or equal to 0",
+        "child_node_tooltip": "Child node's base rate is inherited from parent node and cannot be set separately",
+        "child_node_note": "Child node rate inherited from parent"
+      },
+      "dynamic_rate": {
+        "section_title": "Dynamic Rate Configuration",
+        "enable_label": "Enable Dynamic Rate",
+        "enable_description": "Set different rate multipliers based on time periods",
+        "rules_label": "Time Period Rules",
+        "add_rule": "Add Rule",
+        "rule_title": "Rule {{index}}",
+        "start_time": "Start Time",
+        "end_time": "End Time",
+        "multiplier": "Rate Multiplier",
+        "no_rules": "No rules yet, click the button above to add",
+        "start_time_error": "Start time is required",
+        "end_time_error": "End time is required",
+        "multiplier_error": "Rate multiplier is required",
+        "multiplier_error_numeric": "Rate multiplier must be a number",
+        "multiplier_error_gte_zero": "Rate multiplier must be greater than or equal to 0"
       },
       "code": {
         "label": "Custom Node ID",
@@ -1571,18 +2121,22 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "host": {
         "label": "Node Address",
-        "placeholder": "Please enter domain or IP"
+        "placeholder": "Please enter domain or IP",
+        "error": "Node address is required"
       },
       "port": {
         "label": "Connection Port",
         "placeholder": "User connection port",
         "tooltip": "The port that users actually connect to, this is the port number that needs to be filled in the client configuration. If using transit or tunnel, this port may be different from the port that the server actually listens on.",
-        "sync": "Sync to server port"
+        "sync": "Sync to server port",
+        "error": "Connection port is required"
       },
       "server_port": {
         "label": "Server Port",
-        "placeholder": "Server listening port",
-        "tooltip": "The port that the server actually listens on, this is the real port opened on the server. If using transit or tunnel, this port may be different from the user connection port."
+        "placeholder": "Enter server port",
+        "error": "Server port is required",
+        "tooltip": "The actual listening port on the server.",
+        "sync": "Sync to server port"
       },
       "parent": {
         "label": "Parent Node",
@@ -1602,8 +2156,31 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "shadowsocks": {
         "cipher": {
           "label": "Encryption Method",
-          "placeholder": "Select encryption method"
+          "placeholder": "Select encryption method",
+          "search_placeholder": "Search or enter custom encryption method...",
+          "description": "Select preset encryption method or enter custom encryption method",
+          "preset_group": "Preset Encryption Methods",
+          "custom_group": "Custom Encryption Method",
+          "current_value": "Current Value",
+          "use_custom": "Use",
+          "no_results": "No matching encryption method found",
+          "custom_hint": "You can directly enter a custom encryption method, such as: aes-256-cfb",
+          "custom_label": "Custom"
         },
+        "plugin": {
+          "label": "Plugin",
+          "placeholder": "Select plugin",
+          "obfs_hint": "Hint: Configuration format like obfs=http;obfs-host=www.bing.com;path=/",
+          "v2ray_hint": "Hint: WebSocket mode format is mode=websocket;host=mydomain.me;path=/;tls=true, QUIC mode format is mode=quic;host=mydomain.me"
+        },
+        "plugin_opts": {
+          "label": "Plugin Options",
+          "description": "Enter plugin options in key=value;key2=value2 format",
+          "placeholder": "Example: mode=tls;host=bing.com"
+        },
+        "client_fingerprint": "Client Fingerprint",
+        "client_fingerprint_placeholder": "Select client fingerprint",
+        "client_fingerprint_description": "Client spoofing fingerprint to reduce detection risk",
         "obfs": {
           "label": "Obfuscation",
           "placeholder": "Select obfuscation method",
@@ -1772,6 +2349,83 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "empty": "No ALPN Protocols Available"
           }
         }
+      },
+      "socks": {
+        "version": {
+          "label": "Protocol Version",
+          "placeholder": "Select SOCKS Version"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled"
+        },
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Leave empty if not used"
+          },
+          "allow_insecure": "Allow Insecure?"
+        },
+        "network": {
+          "label": "Transport Protocol",
+          "placeholder": "Select transport protocol"
+        }
+      },
+      "naive": {
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled",
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        }
+      },
+      "http": {
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled",
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        }
+      },
+      "mieru": {
+        "transport": {
+          "label": "Transport Protocol",
+          "placeholder": "Select transport protocol"
+        },
+        "multiplexing": {
+          "label": "Multiplexing",
+          "placeholder": "Select multiplexing level",
+          "MULTIPLEXING_OFF": "Disabled",
+          "MULTIPLEXING_LOW": "Low",
+          "MULTIPLEXING_MIDDLE": "Medium",
+          "MULTIPLEXING_HIGH": "High"
+        }
       }
     },
     "network_settings": {
@@ -1814,6 +2468,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "commission": "Commission",
       "register_time": "Register Time",
       "actions": "Actions",
+      "next_reset_at": "Next Reset At",
       "device_limit": {
         "unlimited": "No device limit",
         "limited": "Maximum {{count}} devices allowed"
@@ -1840,12 +2495,14 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "actions_menu": {
         "edit": "Edit",
+        "view_details": "View Details",
         "assign_order": "Assign Order",
         "copy_url": "Copy Subscribe URL",
         "reset_secret": "Reset UUID & URL",
         "orders": "Orders",
         "invites": "Invites",
         "traffic_records": "Traffic Records",
+        "reset_traffic": "Reset Traffic",
         "delete": "Delete",
         "delete_confirm_title": "Confirm Delete User",
         "delete_confirm_description": "This action will permanently delete user {{email}} and all associated data, including orders, coupons, traffic records, and support tickets. This action cannot be undone. Do you want to continue?"
@@ -1922,7 +2579,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "generate_count_placeholder": "Enter count for batch generation",
         "cancel": "Cancel",
         "submit": "Generate",
-        "success": "Generated successfully"
+        "success": "Generated successfully",
+        "download_csv": "Export as CSV file"
       }
     },
     "edit": {
@@ -1981,6 +2639,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "title": "Actions",
       "send_email": "Send Email",
       "export_csv": "Export CSV",
+      "traffic_reset_stats": "Traffic Reset Stats",
       "batch_ban": "Batch Ban",
       "confirm_ban": {
         "title": "Confirm Batch Ban",
@@ -2008,6 +2667,117 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "required_fields": "Please fill in all required fields"
       }
     },
+    "traffic_reset": {
+      "title": "Traffic Reset",
+      "description": "Reset traffic usage for user {{email}}",
+      "tabs": {
+        "reset": "Reset Traffic",
+        "history": "Reset History"
+      },
+      "user_info": "User Information",
+      "warning": {
+        "title": "Important Notice",
+        "irreversible": "Traffic reset operation is irreversible, please proceed with caution",
+        "reset_to_zero": "After reset, user's upload and download traffic will be cleared to zero",
+        "logged": "All reset operations will be logged in the system"
+      },
+      "reason": {
+        "label": "Reset Reason",
+        "placeholder": "Please enter the reason for traffic reset (optional)",
+        "optional": "This field is optional and used to record the reason for reset"
+      },
+      "confirm_reset": "Confirm Reset",
+      "resetting": "Resetting...",
+      "reset_success": "Traffic reset successful",
+      "reset_failed": "Traffic reset failed",
+      "history": {
+        "summary": "Reset Overview",
+        "reset_count": "Reset Count",
+        "last_reset": "Last Reset",
+        "next_reset": "Next Reset",
+        "never": "Never Reset",
+        "no_schedule": "No Scheduled Reset",
+        "records": "Reset Records",
+        "recent_records": "Recent 10 Reset Records",
+        "no_records": "No reset records",
+        "reset_time": "Reset Time",
+        "traffic_cleared": "Traffic Cleared"
+      },
+      "stats": {
+        "title": "Traffic Reset Statistics",
+        "description": "View system traffic reset statistics",
+        "time_range": "Statistics Time Range",
+        "total_resets": "Total Resets",
+        "auto_resets": "Auto Resets",
+        "manual_resets": "Manual Resets",
+        "cron_resets": "Cron Resets",
+        "in_period": "In the last {{days}} days",
+        "breakdown": "Reset Type Breakdown",
+        "breakdown_description": "Percentage breakdown of different reset operation types",
+        "auto_percentage": "Auto Reset Percentage",
+        "manual_percentage": "Manual Reset Percentage",
+        "cron_percentage": "Cron Reset Percentage",
+        "days_options": {
+          "week": "Last Week",
+          "month": "Last Month",
+          "quarter": "Last Quarter",
+          "year": "Last Year"
+        }
+      }
+    },
+    "traffic_reset_logs": {
+      "title": "Traffic Reset Logs",
+      "description": "View detailed records of all traffic reset operations in the system",
+      "columns": {
+        "id": "Log ID",
+        "user": "User",
+        "reset_type": "Reset Type",
+        "trigger_source": "Trigger Source",
+        "cleared_traffic": "Cleared Traffic",
+        "cleared": "Cleared",
+        "upload": "Upload",
+        "download": "Download",
+        "reset_time": "Reset Time",
+        "log_time": "Log Time"
+      },
+      "filters": {
+        "search_user": "Search user email...",
+        "reset_type": "Reset Type",
+        "trigger_source": "Trigger Source",
+        "all_types": "All Types",
+        "all_sources": "All Sources",
+        "start_date": "Start Date",
+        "end_date": "End Date",
+        "apply_date": "Apply Filter",
+        "reset": "Reset Filter",
+        "filter_title": "Filter Options",
+        "filter_description": "Set filter conditions to find specific traffic reset records",
+        "reset_types": {
+          "monthly": "Monthly Reset",
+          "first_day_month": "First Day of Month Reset",
+          "yearly": "Yearly Reset",
+          "first_day_year": "First Day of Year Reset",
+          "manual": "Manual Reset"
+        },
+        "trigger_sources": {
+          "auto": "Auto Trigger",
+          "manual": "Manual Trigger",
+          "cron": "Cron Job"
+        }
+      },
+      "actions": {
+        "export": "Export Logs",
+        "exporting": "Exporting...",
+        "export_success": "Export successful",
+        "export_failed": "Export failed"
+      },
+      "trigger_descriptions": {
+        "manual": "Manually executed traffic reset by administrator",
+        "cron": "Automatically executed by system scheduled task",
+        "auto": "Automatically triggered by system based on conditions",
+        "other": "Triggered by other methods"
+      }
+    },
     "send_mail": {
       "title": "Send Email",
       "description": "Send email to selected or filtered users",
@@ -2015,6 +2785,56 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "content": "Content",
       "sending": "Sending...",
       "send": "Send"
+    },
+    "dialog": {
+      "title": "User Details",
+      "basicInfo": "Basic Information",
+      "subscriptionInfo": "Subscription Information",
+      "trafficInfo": "Traffic Information",
+      "financialInfo": "Financial Information",
+      "activityInfo": "Activity Information",
+      "inviteInfo": "Invitation Information",
+      "timeInfo": "Time Information",
+      "subscriptionUrl": "Subscription URL",
+      "fields": {
+        "userId": "User ID",
+        "email": "Email",
+        "uuid": "UUID",
+        "token": "Token",
+        "remarks": "Remarks",
+        "subscriptionPlan": "Subscription Plan",
+        "permissionGroup": "Permission Group",
+        "expiredAt": "Expired At",
+        "deviceLimit": "Device Limit",
+        "speedLimit": "Speed Limit",
+        "transferEnable": "Total Traffic",
+        "uploadUsed": "Upload Used",
+        "downloadUsed": "Download Used",
+        "totalUsed": "Total Used",
+        "lastResetAt": "Last Reset",
+        "nextResetAt": "Next Reset",
+        "resetCount": "Reset Count",
+        "balance": "Balance",
+        "commissionBalance": "Commission Balance",
+        "commissionType": "Commission Type",
+        "commissionRate": "Commission Rate",
+        "lastLoginAt": "Last Login",
+        "lastLoginIp": "Last Login IP",
+        "lastOnlineAt": "Last Online",
+        "onlineCount": "Online Devices",
+        "inviteUser": "Inviter",
+        "inviteUserId": "Inviter ID",
+        "createdAt": "Created At",
+        "updatedAt": "Updated At",
+        "subscribeUrl": "Subscription URL",
+        "telegramId": "Telegram ID"
+      }
+    },
+    "status": {
+      "normal": "Normal",
+      "banned": "Banned",
+      "admin": "Admin",
+      "staff": "Staff"
     }
   },
   "subscribe": {
@@ -2053,6 +2873,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "three_yearly": "Three Years",
           "onetime": "One Time",
           "reset_traffic": "Reset Traffic",
+          "no_price": "No Price",
           "unit": {
             "month": "/month",
             "quarter": "/quarter",
@@ -2110,6 +2931,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "placeholder": "Enter capacity limit",
           "unit": "Users"
         },
+        "tags": {
+          "label": "Tags",
+          "placeholder": "Enter a tag and press Enter to confirm"
+        },
         "reset_method": {
           "label": "Traffic Reset Method",
           "placeholder": "Select reset method",
@@ -2148,6 +2973,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "success": {
             "add": "Plan added successfully",
             "update": "Plan updated successfully"
+          },
+          "error": {
+            "validation": "Form validation failed. Please check for errors and try again."
           }
         }
       },

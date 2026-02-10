@@ -2,200 +2,288 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Plan;
-use Illuminate\Console\Command;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use App\Models\TrafficResetLog;
+use App\Services\TrafficResetService;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class ResetTraffic extends Command
 {
-    protected $builder;
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'reset:traffic';
+  protected $signature = 'reset:traffic {--fix-null : 修正模式，重新计算next_reset_at为null的用户} {--force : 强制模式，重新计算所有用户的重置时间}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = '流量清空';
+  protected $description = '流量重置 - 处理所有需要重置的用户';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-        $this->builder = User::where('expired_at', '!=', NULL)
-            ->where('expired_at', '>', time());
+  public function __construct(
+    private readonly TrafficResetService $trafficResetService
+  ) {
+    parent::__construct();
+  }
+
+  public function handle(): int
+  {
+    $fixNull = $this->option('fix-null');
+    $force = $this->option('force');
+
+    $this->info('🚀 开始执行流量重置任务...');
+
+    if ($fixNull) {
+      $this->warn('🔧 修正模式 - 将重新计算next_reset_at为null的用户');
+    } elseif ($force) {
+      $this->warn('⚡ 强制模式 - 将重新计算所有用户的重置时间');
     }
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
-    {
-        ini_set('memory_limit', -1);
-        $resetMethods = Plan::select(
-            DB::raw("GROUP_CONCAT(`id`) as plan_ids"),
-            DB::raw("reset_traffic_method as method")
-        )
-            ->groupBy('reset_traffic_method')
-            ->get()
-            ->toArray();
-        foreach ($resetMethods as $resetMethod) {
-            $planIds = explode(',', $resetMethod['plan_ids']);
-            switch (true) {
-                case ($resetMethod['method'] === NULL): {
-                        $resetTrafficMethod = admin_setting('reset_traffic_method', 0);
-                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
-                        switch ((int) $resetTrafficMethod) {
-                            // month first day
-                            case 0:
-                                $this->resetByMonthFirstDay($builder);
-                                break;
-                            // expire day
-                            case 1:
-                                $this->resetByExpireDay($builder);
-                                break;
-                            // no action
-                            case 2:
-                                break;
-                            // year first day
-                            case 3:
-                                $this->resetByYearFirstDay($builder);
-                            // year expire day
-                            case 4:
-                                $this->resetByExpireYear($builder);
-                        }
-                        break;
-                    }
-                case ($resetMethod['method'] === 0): {
-                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
-                        $this->resetByMonthFirstDay($builder);
-                        break;
-                    }
-                case ($resetMethod['method'] === 1): {
-                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
-                        $this->resetByExpireDay($builder);
-                        break;
-                    }
-                case ($resetMethod['method'] === 2): {
-                        break;
-                    }
-                case ($resetMethod['method'] === 3): {
-                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
-                        $this->resetByYearFirstDay($builder);
-                        break;
-                    }
-                case ($resetMethod['method'] === 4): {
-                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
-                        $this->resetByExpireYear($builder);
-                        break;
-                    }
-            }
-        }
+    try {
+      $result = $fixNull ? $this->performFix() : ($force ? $this->performForce() : $this->performReset());
+      $this->displayResults($result, $fixNull || $force);
+      return self::SUCCESS;
+
+    } catch (\Exception $e) {
+      $this->error("❌ 任务执行失败: {$e->getMessage()}");
+
+      Log::error('流量重置命令执行失败', [
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString(),
+      ]);
+
+      return self::FAILURE;
+    }
+  }
+
+  private function displayResults(array $result, bool $isSpecialMode): void
+  {
+    $this->info("✅ 任务完成！\n");
+
+    if ($isSpecialMode) {
+      $this->displayFixResults($result);
+    } else {
+      $this->displayExecutionResults($result);
+    }
+  }
+
+  private function displayFixResults(array $result): void
+  {
+    $this->info("📊 修正结果统计:");
+    $this->info("🔍 发现用户总数: {$result['total_found']}");
+    $this->info("✅ 成功修正数量: {$result['total_fixed']}");
+    $this->info("⏱️  总执行时间: {$result['duration']} 秒");
+
+    if ($result['error_count'] > 0) {
+      $this->warn("⚠️  错误数量: {$result['error_count']}");
+      $this->warn("详细错误信息请查看日志");
+    } else {
+      $this->info("✨ 无错误发生");
     }
 
-    private function resetByExpireYear($builder): void
-    {
+    if ($result['total_found'] > 0) {
+      $avgTime = round($result['duration'] / $result['total_found'], 4);
+      $this->info("⚡ 平均处理速度: {$avgTime} 秒/用户");
+    }
+  }
 
-        $users = $builder->with('plan')->get();
-        $usersToUpdate = [];
-        foreach ($users as $user) {
-            $expireDay = date('m-d', $user->expired_at);
-            $today = date('m-d');
-            if ($expireDay === $today) {
-                $usersToUpdate[] = [
-                    'id' => $user->id,
-                    'transfer_enable' => $user->plan->transfer_enable
-                ];
-            }
-        }
 
-        foreach ($usersToUpdate as $userData) {
-            User::where('id', $userData['id'])->update([
-                'transfer_enable' => (intval($userData['transfer_enable']) * 1073741824),
-                'u' => 0,
-                'd' => 0
-            ]);
-        }
+
+  private function displayExecutionResults(array $result): void
+  {
+    $this->info("📊 执行结果统计:");
+    $this->info("👥 处理用户总数: {$result['total_processed']}");
+    $this->info("🔄 重置用户数量: {$result['total_reset']}");
+    $this->info("⏱️  总执行时间: {$result['duration']} 秒");
+
+    if ($result['error_count'] > 0) {
+      $this->warn("⚠️  错误数量: {$result['error_count']}");
+      $this->warn("详细错误信息请查看日志");
+    } else {
+      $this->info("✨ 无错误发生");
     }
 
-    private function resetByYearFirstDay($builder): void
-    {
-        $users = $builder->with('plan')->get();
-        $usersToUpdate = [];
-        foreach ($users as $user) {
-            if ((string) date('md') === '0101') {
-                $usersToUpdate[] = [
-                    'id' => $user->id,
-                    'transfer_enable' => $user->plan->transfer_enable
-                ];
-            }
-        }
+    if ($result['total_processed'] > 0) {
+      $avgTime = round($result['duration'] / $result['total_processed'], 4);
+      $this->info("⚡ 平均处理速度: {$avgTime} 秒/用户");
+    }
+  }
 
-        foreach ($usersToUpdate as $userData) {
-            User::where('id', $userData['id'])->update([
-                'transfer_enable' => (intval($userData['transfer_enable']) * 1073741824),
-                'u' => 0,
-                'd' => 0
-            ]);
-        }
+  private function performReset(): array
+  {
+    $startTime = microtime(true);
+    $totalResetCount = 0;
+    $errors = [];
+
+    $users = $this->getResetQuery()->get();
+
+    if ($users->isEmpty()) {
+      $this->info("😴 当前没有需要重置的用户");
+      return [
+        'total_processed' => 0,
+        'total_reset' => 0,
+        'error_count' => 0,
+        'duration' => round(microtime(true) - $startTime, 2),
+      ];
     }
 
-    private function resetByMonthFirstDay($builder): void
-    {
-        $users = $builder->with('plan')->get();
-        $usersToUpdate = [];
-        foreach ($users as $user) {
-            if ((string) date('d') === '01') {
-                $usersToUpdate[] = [
-                    'id' => $user->id,
-                    'transfer_enable' => $user->plan->transfer_enable
-                ];
-            }
-        }
+    $this->info("找到 {$users->count()} 个需要重置的用户");
 
-        foreach ($usersToUpdate as $userData) {
-            User::where('id', $userData['id'])->update([
-                'transfer_enable' => (intval($userData['transfer_enable']) * 1073741824),
-                'u' => 0,
-                'd' => 0
-            ]);
-        }
+    foreach ($users as $user) {
+      try {
+        $totalResetCount += (int) $this->trafficResetService->checkAndReset($user, TrafficResetLog::SOURCE_CRON);
+      } catch (\Exception $e) {
+        $errors[] = [
+          'user_id' => $user->id,
+          'email' => $user->email,
+          'error' => $e->getMessage(),
+        ];
+        Log::error('用户流量重置失败', [
+          'user_id' => $user->id,
+          'error' => $e->getMessage(),
+        ]);
+      }
     }
-    private function resetByExpireDay($builder): void
-    {
-        $lastDay = date('d', strtotime('last day of +0 months'));
-        $today = date('d');
-        $users = $builder->with('plan')->get();
-        $usersToUpdate = [];
 
-        foreach ($users as $user) {
-            $expireDay = date('d', $user->expired_at);
-            if ($expireDay === $today || ($today === $lastDay && $expireDay >= $today)) {
-                $usersToUpdate[] = [
-                    'id' => $user->id,
-                    'transfer_enable' => $user->plan->transfer_enable
-                ];
-            }
-        }
+    return [
+      'total_processed' => $users->count(),
+      'total_reset' => $totalResetCount,
+      'error_count' => count($errors),
+      'duration' => round(microtime(true) - $startTime, 2),
+    ];
+  }
 
-        foreach ($usersToUpdate as $userData) {
-            User::where('id', $userData['id'])->update([
-                'transfer_enable' => (intval($userData['transfer_enable']) * 1073741824),
-                'u' => 0,
-                'd' => 0
-            ]);
-        }
+  private function performFix(): array
+  {
+    $startTime = microtime(true);
+    $nullUsers = $this->getNullResetTimeUsers();
+
+    if ($nullUsers->isEmpty()) {
+      $this->info("✅ 没有发现next_reset_at为null的用户");
+      return [
+        'total_found' => 0,
+        'total_fixed' => 0,
+        'error_count' => 0,
+        'duration' => round(microtime(true) - $startTime, 2),
+      ];
     }
+
+    $this->info("🔧 发现 {$nullUsers->count()} 个next_reset_at为null的用户，开始修正...");
+
+    $fixedCount = 0;
+    $errors = [];
+
+    foreach ($nullUsers as $user) {
+      try {
+        $nextResetTime = $this->trafficResetService->calculateNextResetTime($user);
+        if ($nextResetTime) {
+          $user->next_reset_at = $nextResetTime->timestamp;
+          $user->save();
+          $fixedCount++;
+        }
+      } catch (\Exception $e) {
+        $errors[] = [
+          'user_id' => $user->id,
+          'email' => $user->email,
+          'error' => $e->getMessage(),
+        ];
+        Log::error('修正用户next_reset_at失败', [
+          'user_id' => $user->id,
+          'error' => $e->getMessage(),
+        ]);
+      }
+    }
+
+    return [
+      'total_found' => $nullUsers->count(),
+      'total_fixed' => $fixedCount,
+      'error_count' => count($errors),
+      'duration' => round(microtime(true) - $startTime, 2),
+    ];
+  }
+
+  private function performForce(): array
+  {
+    $startTime = microtime(true);
+    $allUsers = $this->getAllUsers();
+
+    if ($allUsers->isEmpty()) {
+      $this->info("✅ 没有发现需要处理的用户");
+      return [
+        'total_found' => 0,
+        'total_fixed' => 0,
+        'error_count' => 0,
+        'duration' => round(microtime(true) - $startTime, 2),
+      ];
+    }
+
+    $this->info("⚡ 发现 {$allUsers->count()} 个用户，开始重新计算重置时间...");
+
+    $fixedCount = 0;
+    $errors = [];
+
+    foreach ($allUsers as $user) {
+      try {
+        $nextResetTime = $this->trafficResetService->calculateNextResetTime($user);
+        if ($nextResetTime) {
+          $user->next_reset_at = $nextResetTime->timestamp;
+          $user->save();
+          $fixedCount++;
+        }
+      } catch (\Exception $e) {
+        $errors[] = [
+          'user_id' => $user->id,
+          'email' => $user->email,
+          'error' => $e->getMessage(),
+        ];
+        Log::error('强制重新计算用户next_reset_at失败', [
+          'user_id' => $user->id,
+          'error' => $e->getMessage(),
+        ]);
+      }
+    }
+
+    return [
+      'total_found' => $allUsers->count(),
+      'total_fixed' => $fixedCount,
+      'error_count' => count($errors),
+      'duration' => round(microtime(true) - $startTime, 2),
+    ];
+  }
+
+
+
+  private function getResetQuery()
+  {
+    return User::where('next_reset_at', '<=', time())
+      ->whereNotNull('next_reset_at')
+      ->where(function ($query) {
+        $query->where('expired_at', '>', time())
+          ->orWhereNull('expired_at');
+      })
+      ->where('banned', 0)
+      ->whereNotNull('plan_id');
+  }
+
+
+
+  private function getNullResetTimeUsers()
+  {
+    return User::whereNull('next_reset_at')
+      ->whereNotNull('plan_id')
+      ->where(function ($query) {
+        $query->where('expired_at', '>', time())
+          ->orWhereNull('expired_at');
+      })
+      ->where('banned', 0)
+      ->with('plan:id,name,reset_traffic_method')
+      ->get();
+  }
+
+  private function getAllUsers()
+  {
+    return User::whereNotNull('plan_id')
+      ->where(function ($query) {
+        $query->where('expired_at', '>', time())
+          ->orWhereNull('expired_at');
+      })
+      ->where('banned', 0)
+      ->with('plan:id,name,reset_traffic_method')
+      ->get();
+  }
+
 }

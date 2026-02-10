@@ -14,16 +14,17 @@ class UserUpdate extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email:strict',
+            'id' => 'required|integer',
+            'email' => 'email:strict',
             'password' => 'nullable|min:8',
             'transfer_enable' => 'numeric',
             'expired_at' => 'nullable|integer',
-            'banned' => 'in:0,1',
+            'banned' => 'bool',
             'plan_id' => 'nullable|integer',
             'commission_rate' => 'nullable|integer|min:0|max:100',
             'discount' => 'nullable|integer|min:0|max:100',
-            'is_admin' => 'required|in:0,1',
-            'is_staff' => 'required|in:0,1',
+            'is_admin' => 'boolean',
+            'is_staff' => 'boolean',
             'u' => 'integer',
             'd' => 'integer',
             'balance' => 'numeric',

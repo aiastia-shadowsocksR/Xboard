@@ -2,24 +2,16 @@
 
 namespace App\Protocols;
 
-use App\Contracts\ProtocolInterface;
+use App\Support\AbstractProtocol;
+use App\Models\Server;
 
-class Shadowsocks implements ProtocolInterface
+class Shadowsocks extends AbstractProtocol
 {
     public $flags = ['shadowsocks'];
-    private $servers;
-    private $user;
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+    ];
 
     public function handle()
     {
@@ -47,9 +39,10 @@ class Shadowsocks implements ProtocolInterface
         $subs['version'] = 1;
         $subs['bytes_used'] = $bytesUsed;
         $subs['bytes_remaining'] = $bytesRemaining;
-        $subs['servers'] = array_merge($subs['servers'] ? $subs['servers'] : [], $configs);
+        $subs['servers'] = array_merge($subs['servers'], $configs);
 
-        return json_encode($subs, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        return response()->json($subs)
+            ->header('content-type', 'application/json');
     }
 
     public static function SIP008($server, $user)
@@ -59,7 +52,7 @@ class Shadowsocks implements ProtocolInterface
             "remarks" => $server['name'],
             "server" => $server['host'],
             "server_port" => $server['port'],
-            "password" => $user['uuid'],
+            "password" => $server['password'],
             "method" => data_get($server, 'protocol_settings.cipher')
         ];
         return $config;

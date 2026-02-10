@@ -12,13 +12,13 @@ use App\Http\Controllers\V2\Admin\StatController;
 use App\Http\Controllers\V2\Admin\NoticeController;
 use App\Http\Controllers\V2\Admin\TicketController;
 use App\Http\Controllers\V2\Admin\CouponController;
+use App\Http\Controllers\V2\Admin\GiftCardController;
 use App\Http\Controllers\V2\Admin\KnowledgeController;
 use App\Http\Controllers\V2\Admin\PaymentController;
 use App\Http\Controllers\V2\Admin\SystemController;
 use App\Http\Controllers\V2\Admin\ThemeController;
-use App\Http\Controllers\V2\Admin\UpdateController;
+use App\Http\Controllers\V2\Admin\TrafficResetController;
 use Illuminate\Contracts\Routing\Registrar;
-use Illuminate\Support\Facades\Route;
 
 class AdminRoute
 {
@@ -159,6 +159,32 @@ class AdminRoute
                 $router->post('/update', [CouponController::class, 'update']);
             });
 
+            // Gift Card
+            $router->group([
+                'prefix' => 'gift-card'
+            ], function ($router) {
+                // Template management
+                $router->any('/templates', [GiftCardController::class, 'templates']);
+                $router->post('/create-template', [GiftCardController::class, 'createTemplate']);
+                $router->post('/update-template', [GiftCardController::class, 'updateTemplate']);
+                $router->post('/delete-template', [GiftCardController::class, 'deleteTemplate']);
+
+                // Code management
+                $router->post('/generate-codes', [GiftCardController::class, 'generateCodes']);
+                $router->any('/codes', [GiftCardController::class, 'codes']);
+                $router->post('/toggle-code', [GiftCardController::class, 'toggleCode']);
+                $router->get('/export-codes', [GiftCardController::class, 'exportCodes']);
+                $router->post('/update-code', [GiftCardController::class, 'updateCode']);
+                $router->post('/delete-code', [GiftCardController::class, 'deleteCode']);
+
+                // Usage records
+                $router->any('/usages', [GiftCardController::class, 'usages']);
+
+                // Statistics
+                $router->any('/statistics', [GiftCardController::class, 'statistics']);
+                $router->get('/types', [GiftCardController::class, 'types']);
+            });
+
             // Knowledge
             $router->group([
                 'prefix' => 'knowledge'
@@ -193,15 +219,18 @@ class AdminRoute
                 $router->get('/getQueueWorkload', [SystemController::class, 'getQueueWorkload']);
                 $router->get('/getQueueMasters', '\\Laravel\\Horizon\\Http\\Controllers\\MasterSupervisorController@index');
                 $router->get('/getSystemLog', [SystemController::class, 'getSystemLog']);
+                $router->get('/getHorizonFailedJobs', [SystemController::class, 'getHorizonFailedJobs']);
+                $router->post('/clearSystemLog', [SystemController::class, 'clearSystemLog']);
+                $router->get('/getLogClearStats', [SystemController::class, 'getLogClearStats']);
             });
 
             // Update
-            $router->group([
-                'prefix' => 'update'
-            ], function ($router) {
-                $router->get('/check', [UpdateController::class, 'checkUpdate']);
-                $router->post('/execute', [UpdateController::class, 'executeUpdate']);
-            });
+            // $router->group([
+            //     'prefix' => 'update'
+            // ], function ($router) {
+            //     $router->get('/check', [UpdateController::class, 'checkUpdate']);
+            //     $router->post('/execute', [UpdateController::class, 'executeUpdate']);
+            // });
 
             // Theme
             $router->group([
@@ -218,6 +247,7 @@ class AdminRoute
             $router->group([
                 'prefix' => 'plugin'
             ], function ($router) {
+                $router->get('/types', [\App\Http\Controllers\V2\Admin\PluginController::class, 'types']);
                 $router->get('/getPlugins', [\App\Http\Controllers\V2\Admin\PluginController::class, 'index']);
                 $router->post('/upload', [\App\Http\Controllers\V2\Admin\PluginController::class, 'upload']);
                 $router->post('/delete', [\App\Http\Controllers\V2\Admin\PluginController::class, 'delete']);
@@ -227,6 +257,17 @@ class AdminRoute
                 $router->post('disable', [\App\Http\Controllers\V2\Admin\PluginController::class, 'disable']);
                 $router->get('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'getConfig']);
                 $router->post('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'updateConfig']);
+                $router->post('upgrade', [\App\Http\Controllers\V2\Admin\PluginController::class, 'upgrade']);
+            });
+
+            // 流量重置管理
+            $router->group([
+                'prefix' => 'traffic-reset'
+            ], function ($router) {
+                $router->get('logs', [TrafficResetController::class, 'logs']);
+                $router->get('stats', [TrafficResetController::class, 'stats']);
+                $router->get('user/{userId}/history', [TrafficResetController::class, 'userHistory']);
+                $router->post('reset-user', [TrafficResetController::class, 'resetUser']);
             });
         });
 

@@ -67,7 +67,7 @@ git clone -b compose --depth 1 https://github.com/cedar2025/Xboard ./
 # Configure Docker Compose
 ```
 
-4. Edit docker-compose.yml:
+4. Edit compose.yaml:
 ```yaml
 services:
   web:
@@ -107,7 +107,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
+    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777
     restart: unless-stopped
     networks:
       - 1panel-network

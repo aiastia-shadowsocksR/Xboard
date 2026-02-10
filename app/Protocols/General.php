@@ -2,26 +2,28 @@
 
 namespace App\Protocols;
 
-
-use App\Contracts\ProtocolInterface;
+use App\Models\Server;
 use App\Utils\Helper;
+use Illuminate\Support\Arr;
+use App\Support\AbstractProtocol;
 
-class General implements ProtocolInterface
+class General extends AbstractProtocol
 {
     public $flags = ['general', 'v2rayn', 'v2rayng', 'passwall', 'ssrplus', 'sagernet'];
-    private $servers;
-    private $user;
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
+    public $allowedProtocols = [
+        Server::TYPE_VMESS,
+        Server::TYPE_VLESS,
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_TROJAN,
+        Server::TYPE_HYSTERIA,
+        Server::TYPE_SOCKS,
+    ];
 
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    protected $protocolRequirements = [
+        'v2rayng.hysteria.protocol_settings.version' => [2 => '1.9.5'],
+        'v2rayn.hysteria.protocol_settings.version' => [2 => '6.31'],
+    ];
 
     public function handle()
     {
@@ -30,23 +32,17 @@ class General implements ProtocolInterface
         $uri = '';
 
         foreach ($servers as $item) {
-            if ($item['type'] === 'vmess') {
-                $uri .= self::buildVmess($user['uuid'], $item);
-            }
-            if ($item['type'] === 'vless') {
-                $uri .= self::buildVless($user['uuid'], $item);
-            }
-            if ($item['type'] === 'shadowsocks') {
-                $uri .= self::buildShadowsocks($item['password'], $item);
-            }
-            if ($item['type'] === 'trojan') {
-                $uri .= self::buildTrojan($user['uuid'], $item);
-            }
-            if ($item['type'] === 'hysteria') {
-                $uri .= self::buildHysteria($user['uuid'], $item);
-            }
+            $uri .= match ($item['type']) {
+                Server::TYPE_VMESS => self::buildVmess($item['password'], $item),
+                Server::TYPE_VLESS => self::buildVless($item['password'], $item),
+                Server::TYPE_SHADOWSOCKS => self::buildShadowsocks($item['password'], $item),
+                Server::TYPE_TROJAN => self::buildTrojan($item['password'], $item),
+                Server::TYPE_HYSTERIA => self::buildHysteria($item['password'], $item),
+                Server::TYPE_SOCKS => self::buildSocks($item['password'], $item),
+                default => '',
+            };
         }
-        return base64_encode($uri);
+        return response(base64_encode($uri))->header('content-type', 'text/plain');
     }
 
     public static function buildShadowsocks($password, $server)
@@ -59,7 +55,15 @@ class General implements ProtocolInterface
             ['-', '_', ''],
             base64_encode("{$protocol_settings['cipher']}:{$password}")
         );
-        return "ss://{$str}@{$server['host']}:{$server['port']}#{$name}\r\n";
+        $addr = Helper::wrapIPv6($server['host']);
+        $plugin = data_get($protocol_settings, 'plugin');
+        $plugin_opts = data_get($protocol_settings, 'plugin_opts');
+        $url = "ss://{$str}@{$addr}:{$server['port']}";
+        if ($plugin && $plugin_opts) {
+            $url .= '/?' . 'plugin=' . $plugin . ';' . rawurlencode($plugin_opts);
+        }
+        $url .= "#{$name}\r\n";
+        return $url;
     }
 
     public static function buildVmess($uuid, $server)
@@ -86,8 +90,11 @@ class General implements ProtocolInterface
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
-                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host') ? \Arr::random(data_get($protocol_settings, 'network_settings.headers.Host'), ['/']) : null;
+                    $config['path'] = Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['host'] =
+                        data_get($protocol_settings, 'network_settings.header.request.headers.Host')
+                        ? Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['/']), )
+                        : null;
                 }
                 break;
             case 'ws':
@@ -172,7 +179,7 @@ class General implements ProtocolInterface
                 break;
         }
 
-        $user = $uuid . '@' . $host . ':' . $port;
+        $user = $uuid . '@' . Helper::wrapIPv6($host) . ':' . $port;
         $query = http_build_query($config);
         $fragment = urlencode($name);
         $link = sprintf("vless://%s?%s#%s\r\n", $user, $query, $fragment);
@@ -207,7 +214,9 @@ class General implements ProtocolInterface
                 break;
         }
         $query = http_build_query($array);
-        $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $addr = Helper::wrapIPv6($server['host']);
+
+        $uri = "trojan://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;
     }
@@ -238,11 +247,18 @@ class General implements ProtocolInterface
 
         $query = http_build_query($params);
         $name = rawurlencode($server['name']);
+        $addr = Helper::wrapIPv6($server['host']);
 
-        $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri = "hysteria2://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
 
         return $uri;
     }
 
+    public static function buildSocks($password, $server)
+    {
+        $name = rawurlencode($server['name']);
+        $credentials = base64_encode("{$password}:{$password}");
+        return "socks://{$credentials}@{$server['host']}:{$server['port']}#{$name}\r\n";
+    }
 }

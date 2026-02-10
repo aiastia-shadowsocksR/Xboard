@@ -14,6 +14,8 @@ class ServerSave extends FormRequest
             'obfs' => 'nullable|string',
             'obfs_settings.path' => 'nullable|string',
             'obfs_settings.host' => 'nullable|string',
+            'plugin' => 'nullable|string',
+            'plugin_opts' => 'nullable|string',
         ],
         'vmess' => [
             'tls' => 'required|integer',
@@ -38,6 +40,7 @@ class ServerSave extends FormRequest
             'tls.allow_insecure' => 'nullable|boolean',
             'bandwidth.up' => 'nullable|integer',
             'bandwidth.down' => 'nullable|integer',
+            'hop_interval' => 'integer|nullable',
         ],
         'vless' => [
             'tls' => 'required|integer',
@@ -54,7 +57,24 @@ class ServerSave extends FormRequest
             'reality_settings.short_id' => 'nullable|string',
         ],
         'socks' => [
-        ]
+        ],
+        'naive' => [
+            'tls' => 'required|integer',
+            'tls_settings' => 'nullable|array',
+        ],
+        'http' => [
+            'tls' => 'required|integer',
+            'tls_settings' => 'nullable|array',
+        ],
+        'mieru' => [
+            'transport' => 'required|string',
+            'multiplexing' => 'required|string',
+        ],
+        'anytls' => [
+            'tls' => 'nullable|array',
+            'alpn' => 'nullable|string',
+            'padding_scheme' => 'nullable|array',
+        ],
     ];
 
     private function getBaseRules(): array
@@ -75,6 +95,11 @@ class ServerSave extends FormRequest
             'excludes' => 'nullable|array',
             'ips' => 'nullable|array',
             'rate' => 'required|numeric',
+            'rate_time_enable' => 'nullable|boolean',
+            'rate_time_ranges' => 'nullable|array',
+            'rate_time_ranges.*.start' => 'required_with:rate_time_ranges|string|date_format:H:i',
+            'rate_time_ranges.*.end' => 'required_with:rate_time_ranges|string|date_format:H:i',
+            'rate_time_ranges.*.rate' => 'required_with:rate_time_ranges|numeric|min:0',
             'protocol_settings' => 'array',
         ];
     }

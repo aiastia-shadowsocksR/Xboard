@@ -2,8 +2,6 @@
 
 namespace App\Services\Plugin;
 
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -58,9 +56,13 @@ abstract class AbstractPlugin
     /**
      * 获取配置
      */
-    public function getConfig(): array
+    public function getConfig(?string $key = null, $default = null): mixed
     {
-        return $this->config;
+        $config = $this->config;
+        if ($key) {
+            $config = $config[$key] ?? $default;
+        }
+        return $config;
     }
 
     /**
@@ -96,6 +98,35 @@ abstract class AbstractPlugin
     }
 
     /**
+     * 注册 Artisan 命令
+     */
+    protected function registerCommand(string $commandClass): void
+    {
+        if (class_exists($commandClass)) {
+            app('Illuminate\Contracts\Console\Kernel')->registerCommand(new $commandClass());
+        }
+    }
+
+    /**
+     * 注册插件命令目录
+     */
+    public function registerCommands(): void
+    {
+        $commandsPath = $this->basePath . '/Commands';
+        if (File::exists($commandsPath)) {
+            $files = File::glob($commandsPath . '/*.php');
+            foreach ($files as $file) {
+                $className = pathinfo($file, PATHINFO_FILENAME);
+                $commandClass = $this->namespace . '\\Commands\\' . $className;
+                
+                if (class_exists($commandClass)) {
+                    $this->registerCommand($commandClass);
+                }
+            }
+        }
+    }
+
+    /**
      * 中断当前请求并返回新的响应
      *
      * @param Response|string|array $response
@@ -125,7 +156,7 @@ abstract class AbstractPlugin
     /**
      * 插件卸载时调用
      */
-    public function uninstall(): void
+    public function cleanup(): void
     {
         // 插件卸载时的清理逻辑
     }
@@ -176,5 +207,16 @@ abstract class AbstractPlugin
     protected function getAssetsPath(): string
     {
         return $this->basePath . '/resources/assets';
+    }
+
+    /**
+     * Register plugin scheduled tasks. Plugins can override this method.
+     *
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule
+     * @return void
+     */
+    public function schedule(\Illuminate\Console\Scheduling\Schedule $schedule): void
+    {
+        // Plugin can override this method to register scheduled tasks
     }
 }

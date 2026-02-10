@@ -23,17 +23,15 @@ class ThemeService
     }
 
     /**
-     * 注册主题视图路径
+     * Register theme view paths
      */
     private function registerThemeViewPaths(): void
     {
-        // 系统主题路径
         $systemPath = base_path(self::SYSTEM_THEME_DIR);
         if (File::exists($systemPath)) {
             View::addNamespace('theme', $systemPath);
         }
 
-        // 用户主题路径
         $userPath = base_path(self::USER_THEME_DIR);
         if (File::exists($userPath)) {
             View::prependNamespace('theme', $userPath);
@@ -41,7 +39,7 @@ class ThemeService
     }
 
     /**
-     * 获取主题视图路径
+     * Get theme view path
      */
     public function getThemeViewPath(string $theme): ?string
     {
@@ -53,7 +51,7 @@ class ThemeService
     }
 
     /**
-     * 获取所有可用主题列表
+     * Get all available themes
      */
     public function getList(): array
     {
@@ -75,14 +73,13 @@ class ThemeService
     }
 
     /**
-     * 从指定路径获取主题列表
+     * Get themes from specified path
      */
     private function getThemesFromPath(string $path, bool $canDelete): array
     {
         return collect(File::directories($path))
             ->mapWithKeys(function ($dir) use ($canDelete) {
                 $name = basename($dir);
-                // 检查必要文件是否存在
                 if (
                     !File::exists($dir . '/' . self::CONFIG_FILE) ||
                     !File::exists($dir . '/dashboard.blade.php')
@@ -101,7 +98,7 @@ class ThemeService
     }
 
     /**
-     * 上传新主题
+     * Upload new theme
      */
     public function upload(UploadedFile $file): bool
     {
@@ -110,19 +107,17 @@ class ThemeService
 
         try {
             if ($zip->open($file->path()) !== true) {
-                throw new Exception('无效的主题包');
+                throw new Exception('Invalid theme package');
             }
 
-            // 查找配置文件
             $configEntry = collect(range(0, $zip->numFiles - 1))
                 ->map(fn($i) => $zip->getNameIndex($i))
                 ->first(fn($name) => basename($name) === self::CONFIG_FILE);
 
             if (!$configEntry) {
-                throw new Exception('主题配置文件不存在');
+                throw new Exception('Theme config file not found');
             }
 
-            // 解压并读取配置
             $zip->extractTo($tmpPath);
             $zip->close();
 
@@ -130,25 +125,22 @@ class ThemeService
             $configFile = $sourcePath . '/' . self::CONFIG_FILE;
 
             if (!File::exists($configFile)) {
-                throw new Exception('主题配置文件不存在');
+                throw new Exception('Theme config file not found');
             }
 
             $config = json_decode(File::get($configFile), true);
             if (empty($config['name'])) {
-                throw new Exception('主题名称未配置');
+                throw new Exception('Theme name not configured');
             }
 
-            // 检查是否为系统主题
             if (in_array($config['name'], self::SYSTEM_THEMES)) {
-                throw new Exception('不能上传与系统主题同名的主题');
+                throw new Exception('Cannot upload theme with same name as system theme');
             }
 
-            // 检查必要文件
             if (!File::exists($sourcePath . '/dashboard.blade.php')) {
-                throw new Exception('缺少必要的主题文件：dashboard.blade.php');
+                throw new Exception('Missing required theme file: dashboard.blade.php');
             }
 
-            // 确保目标目录存在
             $userThemePath = base_path(self::USER_THEME_DIR);
             if (!File::exists($userThemePath)) {
                 File::makeDirectory($userThemePath, 0755, true);
@@ -156,7 +148,23 @@ class ThemeService
 
             $targetPath = $userThemePath . $config['name'];
             if (File::exists($targetPath)) {
-                throw new Exception('主题已存在');
+                $oldConfigFile = $targetPath . '/config.json';
+                if (!File::exists($oldConfigFile)) {
+                    throw new Exception('Existing theme missing config file');
+                }
+                $oldConfig = json_decode(File::get($oldConfigFile), true);
+                $oldVersion = $oldConfig['version'] ?? '0.0.0';
+                $newVersion = $config['version'] ?? '0.0.0';
+                if (version_compare($newVersion, $oldVersion, '>')) {
+                    $this->cleanupThemeFiles($config['name']);
+                    File::deleteDirectory($targetPath);
+                    File::copyDirectory($sourcePath, $targetPath);
+                    // 更新主题时保留用户配置
+                    $this->initConfig($config['name'], true);
+                    return true;
+                } else {
+                    throw new Exception('Theme exists and not a newer version');
+                }
             }
 
             File::copyDirectory($sourcePath, $targetPath);
@@ -167,7 +175,6 @@ class ThemeService
         } catch (Exception $e) {
             throw $e;
         } finally {
-            // 清理临时文件
             if (File::exists($tmpPath)) {
                 File::deleteDirectory($tmpPath);
             }
@@ -175,39 +182,33 @@ class ThemeService
     }
 
     /**
-     * 切换主题
+     * Switch theme
      */
-    public function switch(string $theme): bool
+    public function switch(string|null $theme): bool
     {
-        $currentTheme = admin_setting('current_theme');
-        if ($theme === $currentTheme) {
+        if ($theme === null) {
             return true;
         }
 
+        $currentTheme = admin_setting('current_theme');
+
         try {
-            // 验证主题是否存在
             $themePath = $this->getThemePath($theme);
             if (!$themePath) {
-                throw new Exception('主题不存在');
+                throw new Exception('Theme not found');
             }
 
-            // 验证视图文件是否存在
             if (!File::exists($this->getThemeViewPath($theme))) {
-                throw new Exception('主题视图文件不存在');
+                throw new Exception('Theme view file not found');
             }
 
-            // 复制主题文件到public目录
+            if ($currentTheme && $currentTheme !== $theme) {
+                $this->cleanupThemeFiles($currentTheme);
+            }
+
             $targetPath = public_path('theme/' . $theme);
             if (!File::copyDirectory($themePath, $targetPath)) {
-                throw new Exception('复制主题文件失败');
-            }
-
-            // 清理旧主题文件
-            if ($currentTheme) {
-                $oldPath = public_path('theme/' . $currentTheme);
-                if (File::exists($oldPath)) {
-                    File::deleteDirectory($oldPath);
-                }
+                throw new Exception('Failed to copy theme files');
             }
 
             admin_setting(['current_theme' => $theme]);
@@ -220,37 +221,26 @@ class ThemeService
     }
 
     /**
-     * 删除主题
+     * Delete theme
      */
     public function delete(string $theme): bool
     {
         try {
-            // 检查是否为系统主题
             if (in_array($theme, self::SYSTEM_THEMES)) {
-                throw new Exception('系统主题不能删除');
+                throw new Exception('System theme cannot be deleted');
             }
 
-            // 检查是否为当前使用的主题
             if ($theme === admin_setting('current_theme')) {
-                throw new Exception('当前使用的主题不能删除');
+                throw new Exception('Current theme cannot be deleted');
             }
 
-            // 获取主题路径
             $themePath = base_path(self::USER_THEME_DIR . $theme);
             if (!File::exists($themePath)) {
-                throw new Exception('主题不存在');
+                throw new Exception('Theme not found');
             }
 
-            // 删除主题文件
+            $this->cleanupThemeFiles($theme);
             File::deleteDirectory($themePath);
-
-            // 删除public目录下的主题文件
-            $publicPath = public_path('theme/' . $theme);
-            if (File::exists($publicPath)) {
-                File::deleteDirectory($publicPath);
-            }
-
-            // 清理主题配置
             admin_setting([self::SETTING_PREFIX . $theme => null]);
             return true;
 
@@ -261,7 +251,7 @@ class ThemeService
     }
 
     /**
-     * 检查主题是否存在
+     * Check if theme exists
      */
     public function exists(string $theme): bool
     {
@@ -269,7 +259,7 @@ class ThemeService
     }
 
     /**
-     * 获取主题路径
+     * Get theme path
      */
     public function getThemePath(string $theme): ?string
     {
@@ -287,7 +277,7 @@ class ThemeService
     }
 
     /**
-     * 获取主题配置
+     * Get theme config
      */
     public function getConfig(string $theme): ?array
     {
@@ -300,22 +290,20 @@ class ThemeService
     }
 
     /**
-     * 更新主题配置
+     * Update theme config
      */
     public function updateConfig(string $theme, array $config): bool
     {
         try {
-            // 验证主题是否存在
             if (!$this->getThemePath($theme)) {
-                throw new Exception('主题不存在');
+                throw new Exception('Theme not found');
             }
 
             $schema = $this->readConfigFile($theme);
             if (!$schema) {
-                throw new Exception('主题配置文件无效');
+                throw new Exception('Invalid theme config file');
             }
 
-            // 只保留有效的配置字段
             $validFields = collect($schema['configs'] ?? [])->pluck('field_name')->toArray();
             $validConfig = collect($config)
                 ->only($validFields)
@@ -334,7 +322,7 @@ class ThemeService
     }
 
     /**
-     * 读取主题配置文件
+     * Read theme config file
      */
     private function readConfigFile(string $theme): ?array
     {
@@ -348,9 +336,73 @@ class ThemeService
     }
 
     /**
-     * 初始化主题配置
+     * Clean up theme files including public directory
      */
-    private function initConfig(string $theme): void
+    public function cleanupThemeFiles(string $theme): void
+    {
+        try {
+            $publicThemePath = public_path('theme/' . $theme);
+            if (File::exists($publicThemePath)) {
+                File::deleteDirectory($publicThemePath);
+                Log::info('Cleaned up public theme files', ['theme' => $theme, 'path' => $publicThemePath]);
+            }
+
+            $cacheKey = "theme_{$theme}_assets";
+            if (cache()->has($cacheKey)) {
+                cache()->forget($cacheKey);
+                Log::info('Cleaned up theme cache', ['theme' => $theme, 'cache_key' => $cacheKey]);
+            }
+
+        } catch (Exception $e) {
+            Log::warning('Failed to cleanup theme files', [
+                'theme' => $theme,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Force refresh current theme public files
+     */
+    public function refreshCurrentTheme(): bool
+    {
+        try {
+            $currentTheme = admin_setting('current_theme');
+            if (!$currentTheme) {
+                return false;
+            }
+
+            $this->cleanupThemeFiles($currentTheme);
+
+            $themePath = $this->getThemePath($currentTheme);
+            if (!$themePath) {
+                throw new Exception('Current theme path not found');
+            }
+
+            $targetPath = public_path('theme/' . $currentTheme);
+            if (!File::copyDirectory($themePath, $targetPath)) {
+                throw new Exception('Failed to copy theme files');
+            }
+
+            Log::info('Refreshed current theme files', ['theme' => $currentTheme]);
+            return true;
+
+        } catch (Exception $e) {
+            Log::error('Failed to refresh current theme', [
+                'theme' => $currentTheme,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Initialize theme config
+     * 
+     * @param string $theme 主题名称
+     * @param bool $preserveExisting 是否保留现有配置（更新主题时使用）
+     */
+    private function initConfig(string $theme, bool $preserveExisting = false): void
     {
         $config = $this->readConfigFile($theme);
         if (!$config) {
@@ -360,6 +412,13 @@ class ThemeService
         $defaults = collect($config['configs'] ?? [])
             ->mapWithKeys(fn($col) => [$col['field_name'] => $col['default_value'] ?? ''])
             ->toArray();
-        admin_setting([self::SETTING_PREFIX . $theme => $defaults]);
+
+        if ($preserveExisting) {
+            $existingConfig = admin_setting(self::SETTING_PREFIX . $theme) ?? [];
+            $mergedConfig = array_merge($defaults, $existingConfig);
+            admin_setting([self::SETTING_PREFIX . $theme => $mergedConfig]);
+        } else {
+            admin_setting([self::SETTING_PREFIX . $theme => $defaults]);
+        }
     }
 }

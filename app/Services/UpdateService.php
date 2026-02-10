@@ -24,8 +24,10 @@ class UpdateService
      */
     public function getCurrentVersion(): string
     {
-        $date = Cache::get(self::CACHE_VERSION_DATE, date('Ymd'));
-        $hash = Cache::get(self::CACHE_VERSION, $this->getCurrentCommit());
+        $date = Cache::get(self::CACHE_VERSION_DATE) ?? date('Ymd');
+        $hash = Cache::rememberForever(self::CACHE_VERSION, function () {
+            return $this->getCurrentCommit();
+        });
         return $date . '-' . $hash;
     }
 
@@ -40,7 +42,7 @@ class UpdateService
                 list($date, $hash) = explode(':', trim($result->output()));
                 Cache::forever(self::CACHE_VERSION_DATE, $date);
                 Cache::forever(self::CACHE_VERSION, substr($hash, 0, 7));
-                Log::info('Version cache updated: ' . $date . '-' . substr($hash, 0, 7));
+                // Log::info('Version cache updated: ' . $date . '-' . substr($hash, 0, 7));
                 return;
             }
         } catch (\Exception $e) {
@@ -49,8 +51,9 @@ class UpdateService
 
         // Fallback
         Cache::forever(self::CACHE_VERSION_DATE, date('Ymd'));
-        Cache::forever(self::CACHE_VERSION, $this->getCurrentCommit());
-        Log::info('Version cache updated (fallback): ' . date('Ymd') . '-' . $this->getCurrentCommit());
+        $fallbackHash = $this->getCurrentCommit();
+        Cache::forever(self::CACHE_VERSION, $fallbackHash);
+        Log::info('Version cache updated (fallback): ' . date('Ymd') . '-' . $fallbackHash);
     }
 
     public function checkForUpdates(): array
@@ -387,7 +390,7 @@ class UpdateService
                 Log::info('Restarting Octane server after update...');
                 // Update version cache before restart
                 $this->updateVersionCache();
-                Process::run('php artisan octane:reload');
+                Process::run('php artisan octane:stop');
                 Log::info('Octane server restarted successfully.');
             } else {
                 Log::info('Octane is not running, skipping restart.');

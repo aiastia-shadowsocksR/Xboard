@@ -3,18 +3,21 @@
 namespace App\Services\Plugin;
 
 use App\Models\Plugin;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Symfony\Component\Finder\Finder;
 
 class PluginManager
 {
     protected string $pluginPath;
     protected array $loadedPlugins = [];
+    protected bool $pluginsInitialized = false;
+    protected array $configTypesCache = [];
 
     public function __construct()
     {
@@ -34,13 +37,13 @@ class PluginManager
      */
     public function getPluginPath(string $pluginCode): string
     {
-        return $this->pluginPath . '/' .  Str::studly($pluginCode);
+        return $this->pluginPath . '/' . Str::studly($pluginCode);
     }
 
     /**
      * 加载插件类
      */
-    protected function loadPlugin(string $pluginCode)
+    protected function loadPlugin(string $pluginCode): ?AbstractPlugin
     {
         if (isset($this->loadedPlugins[$pluginCode])) {
             return $this->loadedPlugins[$pluginCode];
@@ -51,13 +54,16 @@ class PluginManager
         if (!class_exists($pluginClass)) {
             $pluginFile = $this->getPluginPath($pluginCode) . '/Plugin.php';
             if (!File::exists($pluginFile)) {
-                throw new \Exception("Plugin class file not found: {$pluginFile}");
+                Log::warning("Plugin class file not found: {$pluginFile}");
+                Plugin::query()->where('code', $pluginCode)->delete();
+                return null;
             }
             require_once $pluginFile;
         }
 
         if (!class_exists($pluginClass)) {
-            throw new \Exception("Plugin class not found: {$pluginClass}");
+            Log::error("Plugin class not found: {$pluginClass}");
+            return null;
         }
 
         $plugin = new $pluginClass($pluginCode);
@@ -85,16 +91,21 @@ class PluginManager
     {
         $routesPath = $this->getPluginPath($pluginCode) . '/routes';
         if (File::exists($routesPath)) {
-            $files = ['web.php', 'api.php'];
-            foreach ($files as $file) {
-                $routeFile = $routesPath . '/' . $file;
-                if (File::exists($routeFile)) {
-                    Route::middleware('web')
-                        ->namespace($this->getPluginNamespace($pluginCode) . '\\Controllers')
-                        ->group(function () use ($routeFile) {
-                            require $routeFile;
-                        });
-                }
+            $webRouteFile = $routesPath . '/web.php';
+            $apiRouteFile = $routesPath . '/api.php';
+            if (File::exists($webRouteFile)) {
+                Route::middleware('web')
+                    ->namespace($this->getPluginNamespace($pluginCode) . '\\Controllers')
+                    ->group(function () use ($webRouteFile) {
+                        require $webRouteFile;
+                    });
+            }
+            if (File::exists($apiRouteFile)) {
+                Route::middleware('api')
+                    ->namespace($this->getPluginNamespace($pluginCode) . '\\Controllers')
+                    ->group(function () use ($apiRouteFile) {
+                        require $apiRouteFile;
+                    });
             }
         }
     }
@@ -105,9 +116,22 @@ class PluginManager
     protected function loadViews(string $pluginCode): void
     {
         $viewsPath = $this->getPluginPath($pluginCode) . '/resources/views';
-
         if (File::exists($viewsPath)) {
             View::addNamespace(Str::studly($pluginCode), $viewsPath);
+            return;
+        }
+    }
+
+    /**
+     * 注册插件命令
+     */
+    protected function registerPluginCommands(string $pluginCode, AbstractPlugin $pluginInstance): void
+    {
+        try {
+            // 调用插件的命令注册方法
+            $pluginInstance->registerCommands();
+        } catch (\Exception $e) {
+            Log::error("Failed to register commands for plugin '{$pluginCode}': " . $e->getMessage());
         }
     }
 
@@ -116,32 +140,32 @@ class PluginManager
      */
     public function install(string $pluginCode): bool
     {
+        $configFile = $this->getPluginPath($pluginCode) . '/config.json';
+
+        if (!File::exists($configFile)) {
+            throw new \Exception('Plugin config file not found');
+        }
+
+        $config = json_decode(File::get($configFile), true);
+        if (!$this->validateConfig($config)) {
+            throw new \Exception('Invalid plugin config');
+        }
+
+        // 检查插件是否已安装
+        if (Plugin::where('code', $pluginCode)->exists()) {
+            throw new \Exception('Plugin already installed');
+        }
+
+        // 检查依赖
+        if (!$this->checkDependencies($config['require'] ?? [])) {
+            throw new \Exception('Dependencies not satisfied');
+        }
+
+        // 运行数据库迁移
+        $this->runMigrations(pluginCode: $pluginCode);
+
         DB::beginTransaction();
         try {
-            $configFile = $this->getPluginPath($pluginCode) . '/config.json';
-
-            if (!File::exists($configFile)) {
-                throw new \Exception('Plugin config file not found');
-            }
-
-            $config = json_decode(File::get($configFile), true);
-            if (!$this->validateConfig($config)) {
-                throw new \Exception('Invalid plugin config');
-            }
-
-            // 检查插件是否已安装
-            if (Plugin::where('code', $pluginCode)->exists()) {
-                throw new \Exception('Plugin already installed');
-            }
-
-            // 检查依赖
-            if (!$this->checkDependencies($config['require'] ?? [])) {
-                throw new \Exception('Dependencies not satisfied');
-            }
-
-            // 运行数据库迁移
-            $this->runMigrations($pluginCode);
-
             // 提取配置默认值
             $defaultValues = $this->extractDefaultConfig($config);
 
@@ -149,10 +173,11 @@ class PluginManager
             $plugin = $this->loadPlugin($pluginCode);
 
             // 注册到数据库
-            $dbPlugin = Plugin::create([
+            Plugin::create([
                 'code' => $pluginCode,
                 'name' => $config['name'],
                 'version' => $config['version'],
+                'type' => $config['type'] ?? Plugin::TYPE_FEATURE,
                 'is_enabled' => false,
                 'config' => json_encode($defaultValues),
                 'installed_at' => now(),
@@ -169,7 +194,9 @@ class PluginManager
             DB::commit();
             return true;
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             throw $e;
         }
     }
@@ -201,7 +228,22 @@ class PluginManager
 
         if (File::exists($migrationsPath)) {
             Artisan::call('migrate', [
-                '--path' => "plugins/{$pluginCode}/database/migrations",
+                '--path' => "plugins/" . Str::studly($pluginCode) . "/database/migrations",
+                '--force' => true
+            ]);
+        }
+    }
+
+    /**
+     * 回滚插件数据库迁移
+     */
+    protected function runMigrationsRollback(string $pluginCode): void
+    {
+        $migrationsPath = $this->getPluginPath($pluginCode) . '/database/migrations';
+
+        if (File::exists($migrationsPath)) {
+            Artisan::call('migrate:rollback', [
+                '--path' => "plugins/" . Str::studly($pluginCode) . "/database/migrations",
                 '--force' => true
             ]);
         }
@@ -249,6 +291,14 @@ class PluginManager
             return false;
         }
 
+        // 验证插件类型
+        if (isset($config['type'])) {
+            $validTypes = ['feature', 'payment'];
+            if (!in_array($config['type'], $validTypes)) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -260,6 +310,7 @@ class PluginManager
         $plugin = $this->loadPlugin($pluginCode);
 
         if (!$plugin) {
+            Plugin::where('code', $pluginCode)->delete();
             throw new \Exception('Plugin not found: ' . $pluginCode);
         }
 
@@ -269,7 +320,9 @@ class PluginManager
             ->first();
 
         if ($dbPlugin && !empty($dbPlugin->config)) {
-            $plugin->setConfig(json_decode($dbPlugin->config, true));
+            $values = json_decode($dbPlugin->config, true) ?: [];
+            $values = $this->castConfigValuesByType($pluginCode, $values);
+            $plugin->setConfig($values);
         }
 
         // 注册服务提供者
@@ -289,9 +342,7 @@ class PluginManager
                 'updated_at' => now(),
             ]);
         // 初始化插件
-        if (method_exists($plugin, 'boot')) {
-            $plugin->boot();
-        }
+        $plugin->boot();
 
         return true;
     }
@@ -306,7 +357,6 @@ class PluginManager
             throw new \Exception('Plugin not found');
         }
 
-        // 更新数据库状态
         Plugin::query()
             ->where('code', $pluginCode)
             ->update([
@@ -314,10 +364,7 @@ class PluginManager
                 'updated_at' => now(),
             ]);
 
-        // 清理插件
-        if (method_exists($plugin, 'cleanup')) {
-            $plugin->cleanup();
-        }
+        $plugin->cleanup();
 
         return true;
     }
@@ -327,10 +374,8 @@ class PluginManager
      */
     public function uninstall(string $pluginCode): bool
     {
-        // 先禁用插件
         $this->disable($pluginCode);
-
-        // 删除数据库记录
+        $this->runMigrationsRollback($pluginCode);
         Plugin::query()->where('code', $pluginCode)->delete();
 
         return true;
@@ -372,6 +417,62 @@ class PluginManager
                 // 实现版本比较逻辑
             }
         }
+        return true;
+    }
+
+    /**
+     * 升级插件
+     *
+     * @param string $pluginCode
+     * @return bool
+     * @throws \Exception
+     */
+    public function update(string $pluginCode): bool
+    {
+        $dbPlugin = Plugin::where('code', $pluginCode)->first();
+        if (!$dbPlugin) {
+            throw new \Exception('Plugin not installed: ' . $pluginCode);
+        }
+
+        // 获取插件配置文件中的最新版本
+        $configFile = $this->getPluginPath($pluginCode) . '/config.json';
+        if (!File::exists($configFile)) {
+            throw new \Exception('Plugin config file not found');
+        }
+
+        $config = json_decode(File::get($configFile), true);
+        if (!$config || !isset($config['version'])) {
+            throw new \Exception('Invalid plugin config or missing version');
+        }
+
+        $newVersion = $config['version'];
+        $oldVersion = $dbPlugin->version;
+
+        if (version_compare($newVersion, $oldVersion, '<=')) {
+            throw new \Exception('Plugin is already up to date');
+        }
+
+        $this->disable($pluginCode);
+        $this->runMigrations($pluginCode);
+
+        $plugin = $this->loadPlugin($pluginCode);
+            if ($plugin) {
+                if (!empty($dbPlugin->config)) {
+                    $values = json_decode($dbPlugin->config, true) ?: [];
+                    $values = $this->castConfigValuesByType($pluginCode, $values);
+                    $plugin->setConfig($values);
+                }
+
+                $plugin->update($oldVersion, $newVersion);
+            }
+
+        $dbPlugin->update([
+            'version' => $newVersion,
+            'updated_at' => now(),
+        ]);
+
+        $this->enable($pluginCode);
+
         return true;
     }
 
@@ -419,14 +520,208 @@ class PluginManager
 
         $targetPath = $this->pluginPath . '/' . Str::studly($config['code']);
         if (File::exists($targetPath)) {
-            File::deleteDirectory($extractPath);
-            throw new \Exception('插件已存在');
+            $installedConfigPath = $targetPath . '/config.json';
+            if (!File::exists($installedConfigPath)) {
+                throw new \Exception('已安装插件缺少配置文件，无法判断是否可升级');
+            }
+            $installedConfig = json_decode(File::get($installedConfigPath), true);
+
+            $oldVersion = $installedConfig['version'] ?? null;
+            $newVersion = $config['version'] ?? null;
+            if (!$oldVersion || !$newVersion) {
+                throw new \Exception('插件缺少版本号，无法判断是否可升级');
+            }
+            if (version_compare($newVersion, $oldVersion, '<=')) {
+                throw new \Exception('上传插件版本不高于已安装版本，无法升级');
+            }
+
+            File::deleteDirectory($targetPath);
         }
 
         File::copyDirectory($pluginPath, $targetPath);
         File::deleteDirectory($pluginPath);
         File::deleteDirectory($extractPath);
 
+        if (Plugin::where('code', $config['code'])->exists()) {
+            return $this->update($config['code']);
+        }
+
         return true;
+    }
+
+    /**
+     * Initializes all enabled plugins from the database.
+     * This method ensures that plugins are loaded, and their routes, views,
+     * and service providers are registered only once per request cycle.
+     */
+    public function initializeEnabledPlugins(): void
+    {
+        if ($this->pluginsInitialized) {
+            return;
+        }
+
+        $enabledPlugins = Plugin::where('is_enabled', true)->get();
+
+        foreach ($enabledPlugins as $dbPlugin) {
+            try {
+                $pluginCode = $dbPlugin->code;
+
+                $pluginInstance = $this->loadPlugin($pluginCode);
+                if (!$pluginInstance) {
+                    continue;
+                }
+
+                if (!empty($dbPlugin->config)) {
+                    $values = json_decode($dbPlugin->config, true) ?: [];
+                    $values = $this->castConfigValuesByType($pluginCode, $values);
+                    $pluginInstance->setConfig($values);
+                }
+
+                $this->registerServiceProvider($pluginCode);
+                $this->loadRoutes($pluginCode);
+                $this->loadViews($pluginCode);
+                $this->registerPluginCommands($pluginCode, $pluginInstance);
+
+                $pluginInstance->boot();
+
+            } catch (\Exception $e) {
+                Log::error("Failed to initialize plugin '{$dbPlugin->code}': " . $e->getMessage());
+            }
+        }
+
+        $this->pluginsInitialized = true;
+    }
+
+    /**
+     * Register scheduled tasks for all enabled plugins.
+     * Called from Console Kernel. Only loads main plugin class and config for scheduling.
+     * Avoids full HTTP/plugin boot overhead.
+     *
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule
+     */
+    public function registerPluginSchedules(Schedule $schedule): void
+    {
+        Plugin::where('is_enabled', true)
+            ->get()
+            ->each(function ($dbPlugin) use ($schedule) {
+                try {
+                    $pluginInstance = $this->loadPlugin($dbPlugin->code);
+                    if (!$pluginInstance) {
+                        return;
+                    }
+                    if (!empty($dbPlugin->config)) {
+                        $values = json_decode($dbPlugin->config, true) ?: [];
+                        $values = $this->castConfigValuesByType($dbPlugin->code, $values);
+                        $pluginInstance->setConfig($values);
+                    }
+                    $pluginInstance->schedule($schedule);
+
+                } catch (\Exception $e) {
+                    Log::error("Failed to register schedule for plugin '{$dbPlugin->code}': " . $e->getMessage());
+                }
+            });
+    }
+
+    /**
+     * Get all enabled plugin instances.
+     *
+     * This method ensures that all enabled plugins are initialized and then returns them.
+     * It's the central point for accessing active plugins.
+     *
+     * @return array<AbstractPlugin>
+     */
+    public function getEnabledPlugins(): array
+    {
+        $this->initializeEnabledPlugins();
+
+        $enabledPluginCodes = Plugin::where('is_enabled', true)
+            ->pluck('code')
+            ->all();
+
+        return array_intersect_key($this->loadedPlugins, array_flip($enabledPluginCodes));
+    }
+
+    /**
+     * Get enabled plugins by type
+     */
+    public function getEnabledPluginsByType(string $type): array
+    {
+        $this->initializeEnabledPlugins();
+
+        $enabledPluginCodes = Plugin::where('is_enabled', true)
+            ->byType($type)
+            ->pluck('code')
+            ->all();
+
+        return array_intersect_key($this->loadedPlugins, array_flip($enabledPluginCodes));
+    }
+
+    /**
+     * Get enabled payment plugins
+     */
+    public function getEnabledPaymentPlugins(): array
+    {
+        return $this->getEnabledPluginsByType('payment');
+    }
+
+    /**
+     * install default plugins
+     */
+    public static function installDefaultPlugins(): void
+    {
+        foreach (Plugin::PROTECTED_PLUGINS as $pluginCode) {
+            if (!Plugin::where('code', $pluginCode)->exists()) {
+                $pluginManager = app(self::class);
+                $pluginManager->install($pluginCode);
+                $pluginManager->enable($pluginCode);
+                Log::info("Installed and enabled default plugin: {$pluginCode}");
+            }
+        }
+    }
+
+    /**
+     * 根据 config.json 的类型信息对配置值进行类型转换（仅处理 type=json 键）。
+     */
+    protected function castConfigValuesByType(string $pluginCode, array $values): array
+    {
+        $types = $this->getConfigTypes($pluginCode);
+        foreach ($values as $key => $value) {
+            $type = $types[$key] ?? null;
+
+            if ($type === 'json') {
+                if (is_array($value)) {
+                    continue;
+                }
+                
+                if (is_string($value) && $value !== '') {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $values[$key] = $decoded;
+                    }
+                }
+            }
+        }
+        return $values;
+    }
+
+    /**
+     * 读取并缓存插件 config.json 中的键类型映射。
+     */
+    protected function getConfigTypes(string $pluginCode): array
+    {
+        if (isset($this->configTypesCache[$pluginCode])) {
+            return $this->configTypesCache[$pluginCode];
+        }
+        $types = [];
+        $configFile = $this->getPluginPath($pluginCode) . '/config.json';
+        if (File::exists($configFile)) {
+            $config = json_decode(File::get($configFile), true);
+            $fields = $config['config'] ?? [];
+            foreach ($fields as $key => $meta) {
+                $types[$key] = is_array($meta) ? ($meta['type'] ?? 'string') : 'string';
+            }
+        }
+        $this->configTypesCache[$pluginCode] = $types;
+        return $types;
     }
 }

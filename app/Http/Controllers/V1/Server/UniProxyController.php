@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1\Server;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\UpdateAliveDataJob;
 use App\Services\ServerService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
@@ -19,15 +20,23 @@ class UniProxyController extends Controller
     ) {
     }
 
+    /**
+     * 获取当前请求的节点信息
+     */
+    private function getNodeInfo(Request $request)
+    {
+        return $request->attributes->get('node_info');
+    }
+
     // 后端获取用户
     public function user(Request $request)
     {
         ini_set('memory_limit', -1);
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $nodeId = $node->id;
         Cache::put(CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LAST_CHECK_AT', $nodeId), time(), 3600);
-        $users = ServerService::getAvailableUsers($node->group_ids);
+        $users = ServerService::getAvailableUsers($node);
 
         $response['users'] = $users;
 
@@ -55,7 +64,7 @@ class UniProxyController extends Controller
         if (empty($data)) {
             return $this->success(true);
         }
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $nodeId = $node->id;
 
@@ -71,14 +80,14 @@ class UniProxyController extends Controller
         );
 
         $userService = new UserService();
-        $userService->trafficFetch($node->toArray(), $nodeType, $data);
+        $userService->trafficFetch($node, $nodeType, $data);
         return $this->success(true);
     }
 
     // 后端获取配置
     public function config(Request $request)
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $protocolSettings = $node->protocol_settings;
 
@@ -86,6 +95,8 @@ class UniProxyController extends Controller
         $host = $node->host;
 
         $baseConfig = [
+            'protocol' => $nodeType,
+            'listen_ip' => '0.0.0.0',
             'server_port' => (int) $serverPort,
             'network' => data_get($protocolSettings, 'network'),
             'networkSettings' => data_get($protocolSettings, 'network_settings') ?: null,
@@ -95,8 +106,8 @@ class UniProxyController extends Controller
             'shadowsocks' => [
                 ...$baseConfig,
                 'cipher' => $protocolSettings['cipher'],
-                'obfs' => $protocolSettings['obfs'],
-                'obfs_settings' => $protocolSettings['obfs_settings'],
+                'plugin' => $protocolSettings['plugin'],
+                'plugin_opts' => $protocolSettings['plugin_opts'],
                 'server_key' => match ($protocolSettings['cipher']) {
                         '2022-blake3-aes-128-gcm' => Helper::getServerKey($node->created_at, 16),
                         '2022-blake3-aes-256-gcm' => Helper::getServerKey($node->created_at, 32),
@@ -123,6 +134,7 @@ class UniProxyController extends Controller
                         }
             ],
             'hysteria' => [
+                ...$baseConfig,
                 'server_port' => (int) $serverPort,
                 'version' => (int) $protocolSettings['version'],
                 'host' => $host,
@@ -139,6 +151,7 @@ class UniProxyController extends Controller
                     }
             ],
             'tuic' => [
+                ...$baseConfig,
                 'version' => (int) $protocolSettings['version'],
                 'server_port' => (int) $serverPort,
                 'server_name' => $protocolSettings['tls']['server_name'],
@@ -147,8 +160,32 @@ class UniProxyController extends Controller
                 'zero_rtt_handshake' => false,
                 'heartbeat' => "3s",
             ],
-            'socks' => [
+            'anytls' => [
+                ...$baseConfig,
                 'server_port' => (int) $serverPort,
+                'server_name' => $protocolSettings['tls']['server_name'],
+                'padding_scheme' => $protocolSettings['padding_scheme'],
+            ],
+            'socks' => [
+                ...$baseConfig,
+                'server_port' => (int) $serverPort,
+            ],
+            'naive' => [
+                ...$baseConfig,
+                'server_port' => (int) $serverPort,
+                'tls' => (int) $protocolSettings['tls'],
+                'tls_settings' => $protocolSettings['tls_settings']
+            ],
+            'http' => [
+                ...$baseConfig,
+                'server_port' => (int) $serverPort,
+                'tls' => (int) $protocolSettings['tls'],
+                'tls_settings' => $protocolSettings['tls_settings']
+            ],
+            'mieru' => [
+                ...$baseConfig,
+                'server_port' => (string) $serverPort,
+                'protocol' => (int) $protocolSettings['protocol'],
             ],
             default => []
         };
@@ -163,7 +200,7 @@ class UniProxyController extends Controller
         }
 
         $eTag = sha1(json_encode($response));
-        if (strpos($request->header('If-None-Match', '') ?? '', $eTag) !== false) {
+        if (strpos($request->header('If-None-Match', ''), $eTag) !== false) {
             return response(null, 304);
         }
         return response($response)->header('ETag', "\"{$eTag}\"");
@@ -172,8 +209,8 @@ class UniProxyController extends Controller
     // 获取在线用户数据（wyx2685
     public function alivelist(Request $request): JsonResponse
     {
-        $node = $request->input('node_info');
-        $deviceLimitUsers = ServerService::getAvailableUsers($node->group_ids)
+        $node = $this->getNodeInfo($request);
+        $deviceLimitUsers = ServerService::getAvailableUsers($node)
             ->where('device_limit', '>', 0);
         $alive = $this->userOnlineService->getAliveList($deviceLimitUsers);
         return response()->json(['alive' => (object) $alive]);
@@ -182,14 +219,58 @@ class UniProxyController extends Controller
     // 后端提交在线数据
     public function alive(Request $request): JsonResponse
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $data = json_decode(request()->getContent(), true);
         if ($data === null) {
             return response()->json([
                 'error' => 'Invalid online data'
             ], 400);
         }
-        $this->userOnlineService->updateAliveData($data, $node->type, $node->id);
+        UpdateAliveDataJob::dispatch($data, $node->type, $node->id);
         return response()->json(['data' => true]);
+    }
+
+    // 提交节点负载状态
+    public function status(Request $request): JsonResponse
+    {
+        $node = $this->getNodeInfo($request);
+
+        $data = $request->validate([
+            'cpu' => 'required|numeric|min:0|max:100',
+            'mem.total' => 'required|integer|min:0',
+            'mem.used' => 'required|integer|min:0',
+            'swap.total' => 'required|integer|min:0',
+            'swap.used' => 'required|integer|min:0',
+            'disk.total' => 'required|integer|min:0',
+            'disk.used' => 'required|integer|min:0',
+        ]);
+
+        $nodeType = $node->type;
+        $nodeId = $node->id;
+
+        $statusData = [
+            'cpu' => (float) $data['cpu'],
+            'mem' => [
+                'total' => (int) $data['mem']['total'],
+                'used' => (int) $data['mem']['used'],
+            ],
+            'swap' => [
+                'total' => (int) $data['swap']['total'],
+                'used' => (int) $data['swap']['used'],
+            ],
+            'disk' => [
+                'total' => (int) $data['disk']['total'],
+                'used' => (int) $data['disk']['used'],
+            ],
+            'updated_at' => now()->timestamp,
+        ];
+
+        $cacheTime = max(300, (int) admin_setting('server_push_interval', 60) * 3);
+        cache([
+            CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LOAD_STATUS', $nodeId) => $statusData,
+            CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LAST_LOAD_AT', $nodeId) => now()->timestamp,
+        ], $cacheTime);
+
+        return response()->json(['data' => true, "code" => 0, "message" => "success"]);
     }
 }

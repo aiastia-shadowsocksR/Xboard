@@ -2,24 +2,17 @@
 
 namespace App\Protocols;
 
-use App\Contracts\ProtocolInterface;
+use App\Support\AbstractProtocol;
+use App\Models\Server;
 
-class QuantumultX implements ProtocolInterface
+class QuantumultX extends AbstractProtocol
 {
-    public $flags = ['quantumult%20x'];
-    private $servers;
-    private $user;
-
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    public $flags = ['quantumult%20x', 'quantumult-x'];
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_VMESS,
+        Server::TYPE_TROJAN,
+    ];
 
     public function handle()
     {
@@ -27,17 +20,18 @@ class QuantumultX implements ProtocolInterface
         $user = $this->user;
         $uri = '';
         foreach ($servers as $item) {
-            if ($item['type'] === 'shadowsocks') {
+            if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
-            if ($item['type'] === 'vmess') {
-                $uri .= self::buildVmess($user['uuid'], $item);
+            if ($item['type'] === Server::TYPE_VMESS) {
+                $uri .= self::buildVmess($item['password'], $item);
             }
-            if ($item['type'] === 'trojan') {
-                $uri .= self::buildTrojan($user['uuid'], $item);
+            if ($item['type'] === Server::TYPE_TROJAN) {
+                $uri .= self::buildTrojan($item['password'], $item);
             }
         }
-        return response(base64_encode($uri), 200)
+        return response(base64_encode($uri))
+            ->header('content-type', 'text/plain')
             ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
     }
 
@@ -53,7 +47,32 @@ class QuantumultX implements ProtocolInterface
             'udp-relay=true',
             "tag={$server['name']}"
         ];
-        $config = array_filter($config);
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $plugin = data_get($protocol_settings, 'plugin');
+            $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+            // 解析插件选项
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+            switch ($plugin) {
+                case 'obfs':
+                    $config[] = "obfs={$parsedOpts['obfs']}";
+                    if (isset($parsedOpts['obfs-host'])) {
+                        $config[] = "obfs-host={$parsedOpts['obfs-host']}";
+                    }
+                    if (isset($parsedOpts['path'])) {
+                        $config[] = "obfs-uri={$parsedOpts['path']}";
+                    }
+                    break;
+            }
+        }
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;

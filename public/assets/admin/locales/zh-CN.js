@@ -85,6 +85,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "cancel": "取消",
         "submit": "提交"
       },
+      "sections": {
+        "payment_config": "支付配置"
+      },
       "messages": {
         "success": "保存成功"
       }
@@ -161,8 +164,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "planManagement": "套餐管理",
     "orderManagement": "订单管理",
     "couponManagement": "优惠券管理",
+    "giftCardManagement": "礼品卡管理",
     "userManagement": "用户管理",
-    "ticketManagement": "工单管理"
+    "ticketManagement": "工单管理",
+    "trafficResetLogs": "流量重置日志"
   },
   "plugin": {
     "title": "插件管理",
@@ -170,10 +175,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "search": {
       "placeholder": "搜索插件名称或描述..."
     },
-    "category": {
-      "placeholder": "选择分类",
-      "all": "全部",
-      "other": "其他"
+    "type": {
+      "placeholder": "选择插件类型",
+      "all": "全部类型"
     },
     "tabs": {
       "all": "所有插件",
@@ -182,14 +186,22 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     },
     "status": {
       "enabled": "已启用",
-      "disabled": "已禁用"
+      "disabled": "已禁用",
+      "not_installed": "未安装",
+      "protected": "受保护",
+      "filter_placeholder": "安装状态",
+      "all": "全部状态",
+      "installed": "已安装",
+      "available": "可安装"
     },
     "button": {
       "install": "安装",
+      "upgrade": "升级",
       "config": "配置",
       "enable": "启用",
       "disable": "禁用",
-      "uninstall": "卸载"
+      "uninstall": "卸载",
+      "readme": "查看文档"
     },
     "upload": {
       "button": "上传插件",
@@ -213,16 +225,26 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "description": "确定要卸载此插件吗？卸载后插件数据将被清除。",
       "button": "卸载"
     },
+    "upgrade": {
+      "title": "升级插件",
+      "description": "确定要升级此插件吗？升级过程中插件将暂时不可用。",
+      "button": "升级"
+    },
     "config": {
       "title": "配置",
       "description": "修改插件配置",
       "save": "保存",
       "cancel": "取消"
     },
+    "readme": {
+      "title": "插件文档"
+    },
     "author": "作者",
     "messages": {
       "installSuccess": "插件安装成功",
       "installError": "插件安装失败",
+      "upgradeSuccess": "插件升级成功",
+      "upgradeError": "插件升级失败",
       "uninstallSuccess": "插件卸载成功",
       "uninstallError": "插件卸载失败",
       "enableSuccess": "插件启用成功",
@@ -335,20 +357,60 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
             "description": "输入允许的邮箱后缀，每行一个"
           }
         },
-        "recaptcha": {
+        "captcha": {
           "enable": {
-            "label": "启用reCAPTCHA",
-            "description": "开启后用户注册时需要通过reCAPTCHA验证。"
+            "label": "启用验证码",
+            "description": "开启后用户注册时需要通过验证码验证。"
           },
-          "key": {
-            "label": "reCAPTCHA密钥",
-            "placeholder": "输入reCAPTCHA密钥",
-            "description": "输入您的reCAPTCHA密钥"
+          "type": {
+            "label": "验证码类型",
+            "description": "选择要使用的验证码服务类型",
+            "options": {
+              "recaptcha": "Google reCAPTCHA v2",
+              "recaptcha-v3": "Google reCAPTCHA v3",
+              "turnstile": "Cloudflare Turnstile"
+            }
           },
-          "siteKey": {
-            "label": "reCAPTCHA站点密钥",
-            "placeholder": "输入reCAPTCHA站点密钥",
-            "description": "输入您的reCAPTCHA站点密钥"
+          "recaptcha": {
+            "key": {
+              "label": "reCAPTCHA密钥",
+              "placeholder": "输入reCAPTCHA密钥",
+              "description": "输入您的reCAPTCHA密钥"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA站点密钥",
+              "placeholder": "输入reCAPTCHA站点密钥",
+              "description": "输入您的reCAPTCHA站点密钥"
+            }
+          },
+          "recaptcha_v3": {
+            "secretKey": {
+              "label": "reCAPTCHA v3密钥",
+              "placeholder": "输入reCAPTCHA v3密钥",
+              "description": "输入您的reCAPTCHA v3服务器密钥"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA v3站点密钥",
+              "placeholder": "输入reCAPTCHA v3站点密钥",
+              "description": "输入您的reCAPTCHA v3站点密钥"
+            },
+            "scoreThreshold": {
+              "label": "分数阈值",
+              "placeholder": "0.5",
+              "description": "设置验证分数阈值（0-1），分数越高表示越可能是真人操作"
+            }
+          },
+          "turnstile": {
+            "secretKey": {
+              "label": "Turnstile密钥",
+              "placeholder": "输入Turnstile密钥",
+              "description": "输入您的Cloudflare Turnstile密钥"
+            },
+            "siteKey": {
+              "label": "Turnstile站点密钥",
+              "placeholder": "输入Turnstile站点密钥",
+              "description": "输入您的Cloudflare Turnstile站点密钥"
+            }
           }
         },
         "registerLimit": {
@@ -363,8 +425,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           },
           "expire": {
             "label": "限制时长",
-            "placeholder": "输入限制时长（小时）",
-            "description": "注册限制的持续时间（小时）"
+            "placeholder": "输入限制时长（分钟）",
+            "description": "注册限制的持续时间（分钟）"
           }
         },
         "passwordLimit": {
@@ -379,8 +441,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           },
           "expire": {
             "label": "锁定时长",
-            "placeholder": "输入锁定时长（小时）",
-            "description": "账户锁定的持续时间（小时）"
+            "placeholder": "输入锁定时长（分钟）",
+            "description": "账户锁定的持续时间（分钟）"
           }
         }
       }
@@ -434,7 +496,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "subscribe_path": {
         "title": "订阅路径",
         "description": "订阅路径，修改后将会改变原有的subscribe路径",
-        "current_format": "当前订阅路径格式：{path}/xxxxxxxxxx"
+        "current_format": "当前订阅路径格式：{path}/xxxxxxxxxx",
+        "restart_tip": "修改订阅路径后，可能需要重启服务才能生效。"
       },
       "show_info_to_server": {
         "title": "在订阅中展示订阅信息",
@@ -644,8 +707,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "success": "Webhook 设置成功"
       },
       "bot_enable": {
-        "title": "启用机器人通知",
-        "description": "开启后机器人将向管理员和已绑定Telegram的用户发送基础通知。"
+        "title": "启用Telegram绑定引导",
+        "description": "开启后将在用户端显示Telegram绑定引导，帮助用户绑定Telegram账户以接收通知。"
       },
       "discuss_link": {
         "title": "群组链接",
@@ -803,6 +866,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "surge": {
         "title": "Surge 配置模板",
         "description": "配置 Surge 订阅模板，支持 Surge 配置文件格式"
+      },
+      "surfboard": {
+        "title": "Surfboard 配置模版",
+        "description": "配额 Surfboard 订阅模版"
       }
     }
   },
@@ -867,6 +934,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "save": "保存",
     "cancel": "取消",
     "confirm": "确认",
+    "close": "关闭",
     "delete": {
       "success": "删除成功",
       "failed": "删除失败"
@@ -891,6 +959,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "error": "复制失败",
       "errorLog": "复制到剪贴板时出错"
     },
+    "submit": "提交",
+    "saving": "保存中...",
     "table": {
       "noData": "暂无数据",
       "pagination": {
@@ -902,6 +972,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "previousPage": "上一页",
         "nextPage": "下一页",
         "lastPage": "跳转到最后一页"
+      },
+      "viewOptions": {
+        "button": "显示列",
+        "label": "切换显示列"
       }
     },
     "update": {
@@ -914,6 +988,15 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "updating": "更新中...",
       "updateSuccess": "更新成功，系统将在稍后自动重启",
       "updateFailed": "更新失败，请稍后重试"
+    },
+    "time": {
+      "day": "天",
+      "hour": "小时"
+    },
+    "reset": "重置",
+    "export": "导出",
+    "currency": {
+      "yuan": "元"
     }
   },
   "dashboard": {
@@ -1024,7 +1107,19 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "result": "结果",
         "duration": "耗时",
         "attempts": "重试次数",
-        "nextRetry": "下次重试"
+        "nextRetry": "下次重试",
+        "failedJobsDetailTitle": "失败任务详情",
+        "viewFailedJobs": "查看报错详情",
+        "jobDetailTitle": "任务详细信息",
+        "time": "时间",
+        "queue": "队列",
+        "name": "任务名称",
+        "exception": "异常信息",
+        "noFailedJobs": "暂无失败任务",
+        "connection": "连接类型",
+        "payload": "任务数据",
+        "viewDetail": "查看详情",
+        "action": "操作"
       },
       "actions": {
         "retry": "重试",
@@ -1035,6 +1130,409 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "empty": "队列中暂无作业",
       "loading": "正在加载队列状态...",
       "error": "加载队列状态失败"
+    },
+    "systemLog": {
+      "title": "系统日志",
+      "description": "查看系统运行日志记录",
+      "viewAll": "查看全部",
+      "level": "级别",
+      "time": "时间",
+      "message": "消息",
+      "logTitle": "标题",
+      "method": "请求方法",
+      "action": "操作",
+      "context": "上下文",
+      "search": "搜索日志内容...",
+      "noLogs": "暂无日志记录",
+      "noInfoLogs": "暂无信息日志记录",
+      "noWarningLogs": "暂无警告日志记录",
+      "noErrorLogs": "暂无错误日志记录",
+      "noSearchResults": "没有匹配的日志记录",
+      "detailTitle": "日志详情",
+      "viewDetail": "查看详情",
+      "host": "主机",
+      "ip": "IP地址",
+      "uri": "URI",
+      "requestData": "请求数据",
+      "exception": "异常信息",
+      "totalLogs": "总日志数",
+      "tabs": {
+        "all": "全部",
+        "info": "信息",
+        "warning": "警告",
+        "error": "错误"
+      },
+      "filter": {
+        "searchAndLevel": "筛选结果: 包含\"{{keyword}}\"且级别为\"{{level}}\"的日志共 {{count}} 条",
+        "searchOnly": "搜索结果: 包含\"{{keyword}}\"的日志共 {{count}} 条",
+        "levelOnly": "筛选结果: 级别为\"{{level}}\"的日志共 {{count}} 条",
+        "reset": "重置筛选"
+      },
+      "clearLogs": "清理日志",
+      "clearDays": "清理天数",
+      "clearDaysDesc": "清理多少天前的日志 (0-365天，0表示今天)",
+      "clearLevel": "日志级别",
+      "clearLimit": "单次限制",
+      "clearLimitDesc": "单次清理数量限制 (100-10000条)",
+      "clearPreview": "清理预览",
+      "getStats": "获取统计",
+      "cutoffDate": "截止日期",
+      "willClear": "将要清理",
+      "logsUnit": " 条日志",
+      "clearWarning": "此操作不可撤销，请谨慎操作！",
+      "clearing": "清理中...",
+      "confirmClear": "确认清理",
+      "clearSuccess": "清理完成！已清理 {{count}} 条日志",
+      "clearFailed": "清理失败",
+      "getStatsFailed": "获取清理统计失败",
+      "clearLogsFailed": "清理日志失败"
+    },
+    "common": {
+      "refresh": "刷新",
+      "close": "关闭",
+      "pagination": "第 {{current}}/{{total}} 页，共 {{count}} 条"
+    }
+  },
+  "giftCard": {
+    "title": "礼品卡管理",
+    "description": "在这里可以管理礼品卡模板、兑换码和使用记录等功能。",
+    "tabs": {
+      "templates": "模板管理",
+      "codes": "兑换码管理",
+      "usages": "使用记录",
+      "statistics": "统计数据"
+    },
+    "template": {
+      "title": "模板管理",
+      "description": "管理礼品卡模板，包括创建、编辑和删除模板。",
+      "table": {
+        "title": "模板列表",
+        "columns": {
+          "id": "ID",
+          "name": "名称",
+          "type": "类型",
+          "status": "状态",
+          "sort": "排序",
+          "rewards": "奖励内容",
+          "created_at": "创建时间",
+          "actions": "操作",
+          "no_rewards": "无奖励"
+        }
+      },
+      "form": {
+        "add": "添加模板",
+        "edit": "编辑模板",
+        "name": {
+          "label": "模板名称",
+          "placeholder": "请输入模板名称",
+          "required": "请输入模板名称"
+        },
+        "sort": {
+          "label": "排序",
+          "placeholder": "数字越小越靠前"
+        },
+        "type": {
+          "label": "类型",
+          "placeholder": "请选择礼品卡类型"
+        },
+        "description": {
+          "label": "描述",
+          "placeholder": "请输入礼品卡描述"
+        },
+        "status": {
+          "label": "状态",
+          "description": "禁用后，此模板将无法生成或兑换新的礼品卡。"
+        },
+        "display": {
+          "title": "显示效果"
+        },
+        "theme_color": {
+          "label": "主题颜色"
+        },
+        "icon": {
+          "label": "图标",
+          "placeholder": "请输入图标的URL"
+        },
+        "background_image": {
+          "label": "背景图片",
+          "placeholder": "请输入背景图片的URL"
+        },
+        "conditions": {
+          "title": "使用条件",
+          "new_user_max_days": {
+            "label": "新用户注册天数限制",
+            "placeholder": "例如: 7 (仅限注册7天内的用户)"
+          },
+          "new_user_only": {
+            "label": "仅限新用户"
+          },
+          "paid_user_only": {
+            "label": "仅限付费用户"
+          },
+          "require_invite": {
+            "label": "需要邀请关系"
+          },
+          "allowed_plans": {
+            "label": "允许的套餐",
+            "placeholder": "选择允许兑换的套餐 (留空则不限制)"
+          },
+          "disallowed_plans": {
+            "label": "禁止的套餐",
+            "placeholder": "选择禁止兑换的套餐 (留空则不限制)"
+          }
+        },
+        "limits": {
+          "title": "使用限制",
+          "max_use_per_user": {
+            "label": "单用户最大使用次数",
+            "placeholder": "留空则不限制"
+          },
+          "cooldown_hours": {
+            "label": "同类卡冷却时间(小时)",
+            "placeholder": "留空则不限制"
+          },
+          "invite_reward_rate": {
+            "label": "邀请人奖励比例",
+            "placeholder": "例如: 0.2 (代表20%)",
+            "description": "使用者有邀请人时，给邀请人的奖励 = 余额奖励 * 此比例"
+          }
+        },
+        "rewards": {
+          "title": "奖励内容",
+          "balance": {
+            "label": "奖励余额 (元)",
+            "short_label": "余额",
+            "placeholder": "请输入奖励的金额(元)"
+          },
+          "transfer_enable": {
+            "label": "奖励流量 (GB)",
+            "short_label": "流量",
+            "placeholder": "请输入奖励的流量(GB)"
+          },
+          "expire_days": {
+            "label": "延长有效期 (天)",
+            "short_label": "有效期",
+            "placeholder": "请输入延长的天数"
+          },
+          "transfer": {
+            "label": "奖励流量 (字节)",
+            "placeholder": "请输入奖励的流量(字节)"
+          },
+          "days": {
+            "label": "延长有效期 (天)",
+            "placeholder": "请输入延长的天数"
+          },
+          "device_limit": {
+            "label": "增加设备数",
+            "short_label": "设备数",
+            "placeholder": "请输入增加的设备数量"
+          },
+          "reset_package": {
+            "label": "重置当月流量",
+            "description": "开启后，兑换时会将用户当前套餐的已用流量清零。"
+          },
+          "reset_count": {
+            "description": "该类型卡将重置用户当月的流量使用。"
+          },
+          "task_card": {
+            "description": "任务礼品卡的具体奖励将在任务系统中配置。"
+          },
+          "plan_id": {
+            "label": "指定套餐",
+            "short_label": "套餐",
+            "placeholder": "请选择一个套餐"
+          },
+          "plan_validity_days": {
+            "label": "套餐有效期 (天)",
+            "short_label": "套餐有效期",
+            "placeholder": "留空则使用套餐默认有效期"
+          },
+          "random_rewards": {
+            "label": "随机奖励池",
+            "add": "添加随机奖励项",
+            "weight": "权重"
+          }
+        },
+        "special_config": {
+          "title": "特殊配置",
+          "start_time": {
+            "label": "活动开始时间",
+            "placeholder": "请选择开始日期"
+          },
+          "end_time": {
+            "label": "活动结束时间",
+            "placeholder": "请选择结束日期"
+          },
+          "festival_bonus": {
+            "label": "节日奖励乘数",
+            "placeholder": "例如: 1.5 (代表1.5倍)"
+          }
+        },
+        "submit": {
+          "saving": "保存中...",
+          "save": "保存"
+        }
+      },
+      "actions": {
+        "edit": "编辑",
+        "delete": "删除",
+        "deleteConfirm": {
+          "title": "确认删除",
+          "description": "此操作将永久删除该模板，确定要继续吗？",
+          "confirmText": "删除"
+        }
+      }
+    },
+    "code": {
+      "title": "兑换码管理",
+      "form": {
+        "generate": "生成兑换码",
+        "template_id": {
+          "label": "选择模板",
+          "placeholder": "请选择一个模板来生成兑换码"
+        },
+        "count": {
+          "label": "生成数量"
+        },
+        "prefix": {
+          "label": "自定义前缀 (可选)"
+        },
+        "expires_hours": {
+          "label": "有效期 (小时)"
+        },
+        "max_usage": {
+          "label": "最大使用次数"
+        },
+        "download_csv": "导出CSV",
+        "submit": {
+          "generating": "生成中...",
+          "generate": "立即生成"
+        }
+      },
+      "description": "管理礼品卡兑换码，包括生成、查看和导出兑换码。",
+      "generate": {
+        "title": "生成兑换码",
+        "template": "选择模板",
+        "count": "生成数量",
+        "prefix": "自定义前缀",
+        "expires_hours": "有效期 (小时)",
+        "max_usage": "最大使用次数",
+        "submit": "生成"
+      },
+      "table": {
+        "title": "兑换码列表",
+        "columns": {
+          "id": "ID",
+          "code": "兑换码",
+          "template_name": "模板名称",
+          "status": "状态",
+          "expires_at": "过期时间",
+          "usage_count": "已用次数",
+          "max_usage": "可用次数",
+          "created_at": "创建时间"
+        }
+      },
+      "actions": {
+        "enable": "启用",
+        "disable": "禁用",
+        "export": "导出",
+        "exportConfirm": {
+          "title": "确认导出",
+          "description": "将导出选定批次的所有兑换码为文本文件。确定要继续吗？",
+          "confirmText": "导出"
+        }
+      },
+      "status": {
+        "0": "未使用",
+        "1": "已使用",
+        "2": "已禁用",
+        "3": "已过期"
+      }
+    },
+    "usage": {
+      "title": "使用记录",
+      "description": "查看礼品卡的使用记录和详细信息。",
+      "table": {
+        "columns": {
+          "id": "ID",
+          "code": "兑换码",
+          "template_name": "模板名称",
+          "user_email": "用户邮箱",
+          "rewards_given": "获得奖励",
+          "invite_rewards": "邀请奖励",
+          "multiplier_applied": "倍数加成",
+          "ip_address": "IP地址",
+          "created_at": "使用时间",
+          "actions": "操作"
+        }
+      },
+      "actions": {
+        "view": "查看详情"
+      }
+    },
+    "statistics": {
+      "title": "统计数据",
+      "description": "查看礼品卡的统计数据和使用情况分析。",
+      "total": {
+        "title": "总体统计",
+        "templates_count": "模板总数",
+        "active_templates_count": "活跃模板数",
+        "codes_count": "兑换码总数",
+        "used_codes_count": "已使用兑换码",
+        "usages_count": "使用记录数"
+      },
+      "daily": {
+        "title": "每日使用量",
+        "chart": "使用量趋势图"
+      },
+      "type": {
+        "title": "类型统计",
+        "chart": "类型分布图"
+      },
+      "dateRange": {
+        "label": "日期范围",
+        "start": "开始日期",
+        "end": "结束日期"
+      }
+    },
+    "types": {
+      "1": "通用礼品卡",
+      "2": "套餐礼品卡",
+      "3": "盲盒礼品卡",
+      "4": "任务礼品卡"
+    },
+    "common": {
+      "search": "搜索礼品卡...",
+      "reset": "重置",
+      "filter": "筛选",
+      "export": "导出",
+      "refresh": "刷新",
+      "back": "返回",
+      "close": "关闭",
+      "confirm": "确认",
+      "cancel": "取消",
+      "enabled": "已启用",
+      "disabled": "已禁用",
+      "loading": "加载中...",
+      "noData": "暂无数据",
+      "success": "操作成功",
+      "error": "操作失败"
+    },
+    "messages": {
+      "formInvalid": "请检查表单输入是否正确",
+      "templateCreated": "模板创建成功",
+      "templateUpdated": "模板更新成功",
+      "templateDeleted": "模板删除成功",
+      "codeGenerated": "兑换码生成成功",
+      "generateCodeFailed": "兑换码生成失败",
+      "codeStatusUpdated": "兑换码状态更新成功",
+      "updateCodeStatusFailed": "兑换码状态更新失败",
+      "codesExported": "兑换码导出成功",
+      "createTemplateFailed": "创建模板失败",
+      "updateTemplateFailed": "更新模板失败",
+      "deleteTemplateFailed": "删除模板失败",
+      "loadDataFailed": "加载数据失败",
+      "codesGenerated": "兑换码生成成功"
     }
   },
   "route": {
@@ -1148,6 +1646,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "basicInfo": "基本信息",
       "amountInfo": "金额信息",
       "timeInfo": "时间信息",
+      "commissionInfo": "佣金信息",
+      "commissionStatusActive": "有效",
       "addOrder": "添加订单",
       "assignOrder": "订单分配",
       "fields": {
@@ -1161,7 +1661,12 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "refundAmount": "退回金额",
         "deductionAmount": "折抵金额",
         "createdAt": "创建时间",
-        "updatedAt": "更新时间"
+        "updatedAt": "更新时间",
+        "commissionStatus": "佣金状态",
+        "commissionAmount": "佣金金额",
+        "actualCommissionAmount": "实际佣金",
+        "inviteUser": "邀请人",
+        "inviteUserId": "邀请人ID"
       },
       "placeholders": {
         "email": "请输入用户邮箱",
@@ -1278,6 +1783,17 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "error": {
         "saveFailed": "保存优惠券失败"
+      },
+      "timeRange": {
+        "quickSet": "快速设置",
+        "presets": {
+          "1week": "1周",
+          "2weeks": "2周",
+          "1month": "1个月",
+          "3months": "3个月",
+          "6months": "6个月",
+          "1year": "1年"
+        }
       }
     },
     "period": {
@@ -1477,6 +1993,19 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "tooltip": "可订阅到该节点的权限组",
         "empty": "--"
       },
+      "loadStatus": {
+        "title": "负载状态",
+        "tooltip": "服务器资源使用情况",
+        "noData": "暂无数据",
+        "details": "系统负载详情",
+        "cpu": "CPU 使用率",
+        "memory": "内存使用",
+        "swap": "交换区",
+        "disk": "磁盘使用",
+        "lastUpdate": "最后更新"
+      },
+      "customId": "自定义ID",
+      "originalId": "原始ID",
       "type": "类型",
       "actions": "操作",
       "copyAddress": "复制连接地址",
@@ -1518,8 +2047,29 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "error": "请输入有效的节点名称"
       },
       "rate": {
-        "label": "倍率",
-        "error": "请输入有效的倍率"
+        "label": "基础倍率",
+        "error": "基础倍率不能为空",
+        "error_numeric": "基础倍率必须是数字",
+        "error_gte_zero": "基础倍率必须大于或等于0",
+        "child_node_tooltip": "子节点的基础倍率继承自父节点，无法单独设置",
+        "child_node_note": "子节点倍率继承自父节点"
+      },
+      "dynamic_rate": {
+        "section_title": "动态倍率配置",
+        "enable_label": "启用动态倍率",
+        "enable_description": "根据时间段设置不同的倍率乘数",
+        "rules_label": "时间段规则",
+        "add_rule": "添加规则",
+        "rule_title": "规则 {{index}}",
+        "start_time": "开始时间",
+        "end_time": "结束时间",
+        "multiplier": "倍率乘数",
+        "no_rules": "暂无规则，点击上方按钮添加",
+        "start_time_error": "开始时间不能为空",
+        "end_time_error": "结束时间不能为空",
+        "multiplier_error": "倍率乘数不能为空",
+        "multiplier_error_numeric": "倍率乘数必须是数字",
+        "multiplier_error_gte_zero": "倍率乘数必须大于或等于0"
       },
       "code": {
         "label": "自定义节点ID",
@@ -1538,21 +2088,32 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "host": {
         "label": "节点地址",
-        "placeholder": "请输入节点域名或者IP"
+        "placeholder": "请输入节点域名或者IP",
+        "error": "节点地址不能为空"
       },
       "port": {
         "label": "连接端口",
         "placeholder": "用户连接端口",
-        "tooltip": "用户实际连接使用的端口，这是客户端配置中需要填写的端口号。如果使用了中转或隧道，这个端口可能与服务器实际监听的端口不同。",
-        "sync": "同步到服务端口"
+        "tooltip": "用户实际连接使用的端口号。如果使用了中转或隧道，这个端口可能与服务器实际监听的端口不同。",
+        "sync": "同步到服务端口",
+        "error": "连接端口不能为空"
       },
       "server_port": {
         "label": "服务端口",
-        "placeholder": "服务端开放端口",
-        "tooltip": "服务器实际监听的端口，这是在服务器上开放的真实端口。如果使用了中转或隧道，这个端口可能与用户连接端口不同。"
+        "placeholder": "请输入服务端口",
+        "error": "服务端口不能为空",
+        "tooltip": "服务器上的实际监听端口。"
+      },
+      "listen_address": {
+        "label": "监听地址",
+        "placeholder": "留空使用默认 (0.0.0.0)，或输入: 127.0.0.1, ::1 等",
+        "description": "指定服务器监听的 IP 地址。留空则使用默认地址 (0.0.0.0)，表示监听所有网络接口。可设置为 127.0.0.1 (仅本地) 或特定 IP 地址",
+        "show": "监听地址",
+        "hide": "隐藏监听地址",
+        "optional": "可选"
       },
       "parent": {
-        "label": "父节点",
+        "label": "父级节点",
         "placeholder": "选择父节点",
         "none": "无"
       },
@@ -1569,8 +2130,31 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "shadowsocks": {
         "cipher": {
           "label": "加密算法",
-          "placeholder": "选择加密算法"
+          "placeholder": "选择加密算法",
+          "search_placeholder": "搜索或输入自定义加密方式...",
+          "description": "选择预设加密方式或输入自定义加密方式",
+          "preset_group": "预设加密方式",
+          "custom_group": "自定义加密方式",
+          "current_value": "当前值",
+          "use_custom": "使用",
+          "no_results": "未找到匹配的加密方式",
+          "custom_hint": "你可以直接输入自定义的加密方式，如：aes-256-cfb",
+          "custom_label": "自定义"
         },
+        "plugin": {
+          "label": "插件",
+          "placeholder": "选择插件",
+          "obfs_hint": "提示：配置格式如 obfs=http;obfs-host=www.bing.com;path=/",
+          "v2ray_hint": "提示：WebSocket模式格式为 mode=websocket;host=mydomain.me;path=/;tls=true，QUIC模式格式为 mode=quic;host=mydomain.me"
+        },
+        "plugin_opts": {
+          "label": "插件选项",
+          "description": "按照 key=value;key2=value2 格式输入插件选项",
+          "placeholder": "例如: mode=tls;host=bing.com"
+        },
+        "client_fingerprint": "客户端指纹",
+        "client_fingerprint_placeholder": "选择客户端指纹",
+        "client_fingerprint_description": "客户端伪装指纹，用于降低被识别风险",
         "obfs": {
           "label": "混淆",
           "placeholder": "选择混淆方式",
@@ -1739,6 +2323,125 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
             "empty": "未找到可用的ALPN协议"
           }
         }
+      },
+      "socks": {
+        "version": {
+          "label": "协议版本",
+          "placeholder": "选择SOCKS版本"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "请选择安全性",
+          "disabled": "不支持",
+          "enabled": "支持"
+        },
+        "tls_settings": {
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "不使用请留空"
+          },
+          "allow_insecure": "允许不安全?"
+        },
+        "network": {
+          "label": "传输协议",
+          "placeholder": "选择传输协议"
+        }
+      },
+      "naive": {
+        "tls_settings": {
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "不使用请留空"
+          },
+          "allow_insecure": "允许不安全?"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "请选择安全性",
+          "disabled": "不支持",
+          "enabled": "支持",
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "当节点地址与证书不一致时用于证书验证"
+          },
+          "allow_insecure": "允许不安全连接"
+        }
+      },
+      "http": {
+        "tls": {
+          "label": "TLS",
+          "placeholder": "请选择安全性",
+          "disabled": "不支持",
+          "enabled": "支持",
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "当节点地址与证书不一致时用于证书验证"
+          },
+          "allow_insecure": "允许不安全连接"
+        },
+        "tls_settings": {
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "当节点地址与证书不一致时用于证书验证"
+          },
+          "allow_insecure": "允许不安全连接"
+        }
+      },
+      "mieru": {
+        "transport": {
+          "label": "传输协议",
+          "placeholder": "选择传输协议"
+        },
+        "multiplexing": {
+          "label": "多路复用",
+          "placeholder": "选择多路复用级别",
+          "MULTIPLEXING_OFF": "关闭",
+          "MULTIPLEXING_LOW": "低",
+          "MULTIPLEXING_MIDDLE": "中",
+          "MULTIPLEXING_HIGH": "高"
+        }
+      },
+      "cert_config": {
+        "title": "证书配置 (高级)",
+        "cert_mode": {
+          "label": "证书模式",
+          "placeholder": "选择证书申请方式",
+          "description": "选择证书申请方式，仅部分后端节点支持",
+          "http": "HTTP",
+          "self": "Self",
+          "dns": "DNS"
+        },
+        "cert_files": {
+          "label": "证书文件",
+          "description": "配置证书和私钥文件路径，留空将自动生成"
+        },
+        "cert_file": {
+          "label": "证书文件路径",
+          "placeholder": "留空将自动生成，或输入: /path/to/cert.pem",
+          "description": "证书公钥文件路径，留空时系统将根据证书模式自动生成",
+          "auto_generate_hint": "留空自动生成"
+        },
+        "key_file": {
+          "label": "私钥文件路径",
+          "placeholder": "留空将自动生成，或输入: /path/to/key.pem",
+          "description": "证书私钥文件路径，留空时系统将根据证书模式自动生成",
+          "auto_generate_hint": "留空自动生成"
+        },
+        "dns_config": {
+          "label": "DNS 配置",
+          "description": "配置 DNS 验证所需的提供商和环境变量"
+        },
+        "dns_provider": {
+          "label": "DNS 提供商",
+          "placeholder": "例如: cloudflare, alidns, route53",
+          "description": "输入 DNS 提供商名称，参考",
+          "doc_link": "DNS 提供商文档"
+        },
+        "dns_env": {
+          "label": "DNS 环境变量",
+          "placeholder": "例如:\nCLOUDFLARE_EMAIL=you@example.com\nCLOUDFLARE_API_KEY=your_api_key",
+          "description": "每行一个环境变量，格式: KEY=value。请根据所选 DNS 提供商的要求设置相应的环境变量"
+        }
       }
     },
     "network_settings": {
@@ -1781,6 +2484,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "commission": "佣金",
       "register_time": "注册时间",
       "actions": "操作",
+      "next_reset_at": "下次重置时间",
       "device_limit": {
         "unlimited": "无设备数限制",
         "limited": "最多可同时在线 {{count}} 台设备"
@@ -1807,9 +2511,11 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "actions_menu": {
         "edit": "编辑",
+        "view_details": "查看详情",
         "assign_order": "分配订单",
         "copy_url": "复制订阅URL",
         "reset_secret": "重置UUID及订阅URL",
+        "reset_traffic": "重置流量",
         "orders": "TA的订单",
         "invites": "TA的邀请",
         "traffic_records": "TA的流量记录",
@@ -1889,7 +2595,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "generate_count_placeholder": "如果为批量生产请输入生成数量",
         "cancel": "取消",
         "submit": "生成",
-        "success": "生成成功"
+        "success": "生成成功",
+        "download_csv": "导出为 CSV 文件"
       }
     },
     "edit": {
@@ -1948,6 +2655,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "title": "操作",
       "send_email": "发送邮件",
       "export_csv": "导出 CSV",
+      "traffic_reset_stats": "流量重置统计",
       "batch_ban": "批量封禁",
       "confirm_ban": {
         "title": "确认批量封禁",
@@ -1956,6 +2664,117 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "cancel": "取消",
         "confirm": "确认封禁",
         "banning": "封禁中..."
+      }
+    },
+    "traffic_reset": {
+      "title": "流量重置",
+      "description": "为用户 {{email}} 重置流量使用量",
+      "tabs": {
+        "reset": "重置流量",
+        "history": "重置历史"
+      },
+      "user_info": "用户信息",
+      "warning": {
+        "title": "重要提醒",
+        "irreversible": "流量重置操作不可逆，请谨慎操作",
+        "reset_to_zero": "重置后用户的上传和下载流量将清零",
+        "logged": "所有重置操作都会被记录在系统日志中"
+      },
+      "reason": {
+        "label": "重置原因",
+        "placeholder": "请输入重置流量的原因（可选）",
+        "optional": "此字段为可选项，用于记录重置原因"
+      },
+      "confirm_reset": "确认重置",
+      "resetting": "重置中...",
+      "reset_success": "流量重置成功",
+      "reset_failed": "流量重置失败",
+      "history": {
+        "summary": "重置概览",
+        "reset_count": "重置次数",
+        "last_reset": "最后重置",
+        "next_reset": "下次重置",
+        "never": "从未重置",
+        "no_schedule": "无定时重置",
+        "records": "重置记录",
+        "recent_records": "最近10次重置记录",
+        "no_records": "暂无重置记录",
+        "reset_time": "重置时间",
+        "traffic_cleared": "清除流量"
+      },
+      "stats": {
+        "title": "流量重置统计",
+        "description": "查看系统流量重置的统计信息",
+        "time_range": "统计时间范围",
+        "total_resets": "总重置次数",
+        "auto_resets": "自动重置",
+        "manual_resets": "手动重置",
+        "cron_resets": "定时重置",
+        "in_period": "最近 {{days}} 天",
+        "breakdown": "重置类型分布",
+        "breakdown_description": "各类型重置操作的百分比分布",
+        "auto_percentage": "自动重置占比",
+        "manual_percentage": "手动重置占比",
+        "cron_percentage": "定时重置占比",
+        "days_options": {
+          "week": "最近一周",
+          "month": "最近一月",
+          "quarter": "最近三月",
+          "year": "最近一年"
+        }
+      }
+    },
+    "traffic_reset_logs": {
+      "title": "流量重置日志",
+      "description": "查看系统中所有流量重置操作的详细记录",
+      "columns": {
+        "id": "日志ID",
+        "user": "用户",
+        "reset_type": "重置类型",
+        "trigger_source": "触发源",
+        "cleared_traffic": "清除流量",
+        "cleared": "已清除",
+        "upload": "上传",
+        "download": "下载",
+        "reset_time": "重置时间",
+        "log_time": "记录时间"
+      },
+      "filters": {
+        "search_user": "搜索用户邮箱...",
+        "reset_type": "重置类型",
+        "trigger_source": "触发源",
+        "all_types": "全部类型",
+        "all_sources": "全部来源",
+        "start_date": "开始日期",
+        "end_date": "结束日期",
+        "apply_date": "应用筛选",
+        "reset": "重置筛选",
+        "filter_title": "筛选条件",
+        "filter_description": "设置筛选条件来查找特定的流量重置记录",
+        "reset_types": {
+          "monthly": "按月重置",
+          "first_day_month": "每月1号重置",
+          "yearly": "按年重置",
+          "first_day_year": "每年1月1日重置",
+          "manual": "手动重置"
+        },
+        "trigger_sources": {
+          "auto": "自动触发",
+          "manual": "手动触发",
+          "cron": "定时任务"
+        }
+      },
+      "actions": {
+        "export": "导出日志",
+        "exporting": "导出中...",
+        "export_success": "导出成功",
+        "export_failed": "导出失败"
+      },
+      "trigger_descriptions": {
+        "manual": "管理员手动执行的流量重置",
+        "cron": "系统定时任务自动执行",
+        "auto": "系统根据条件自动触发",
+        "other": "其他方式触发"
       }
     },
     "messages": {
@@ -1982,6 +2801,56 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "content": "内容",
       "sending": "发送中...",
       "send": "发送"
+    },
+    "dialog": {
+      "title": "用户详情",
+      "basicInfo": "基本信息",
+      "subscriptionInfo": "订阅信息",
+      "trafficInfo": "流量信息",
+      "financialInfo": "财务信息",
+      "activityInfo": "活动信息",
+      "inviteInfo": "邀请信息",
+      "timeInfo": "时间信息",
+      "subscriptionUrl": "订阅链接",
+      "fields": {
+        "userId": "用户ID",
+        "email": "邮箱",
+        "uuid": "UUID",
+        "token": "Token",
+        "remarks": "备注",
+        "subscriptionPlan": "订阅套餐",
+        "permissionGroup": "权限组",
+        "expiredAt": "到期时间",
+        "deviceLimit": "设备限制",
+        "speedLimit": "速度限制",
+        "transferEnable": "总流量",
+        "uploadUsed": "上传已用",
+        "downloadUsed": "下载已用",
+        "totalUsed": "总已用",
+        "lastResetAt": "上次重置",
+        "nextResetAt": "下次重置",
+        "resetCount": "重置次数",
+        "balance": "余额",
+        "commissionBalance": "佣金余额",
+        "commissionType": "佣金类型",
+        "commissionRate": "佣金比例",
+        "lastLoginAt": "最后登录",
+        "lastLoginIp": "最后登录IP",
+        "lastOnlineAt": "最后在线",
+        "onlineCount": "在线设备",
+        "inviteUser": "邀请人",
+        "inviteUserId": "邀请人ID",
+        "createdAt": "创建时间",
+        "updatedAt": "更新时间",
+        "subscribeUrl": "订阅链接",
+        "telegramId": "Telegram ID"
+      }
+    },
+    "status": {
+      "normal": "正常",
+      "banned": "已封禁",
+      "admin": "管理员",
+      "staff": "员工"
     }
   },
   "subscribe": {
@@ -2020,6 +2889,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "three_yearly": "三年付",
           "onetime": "流量包",
           "reset_traffic": "重置包",
+          "no_price": "无价格",
           "unit": {
             "month": "元/月",
             "quarter": "元/季",
@@ -2077,6 +2947,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "placeholder": "请输入容量限制",
           "unit": "人"
         },
+        "tags": {
+          "label": "标签",
+          "placeholder": "输入标签后按回车确认"
+        },
         "reset_method": {
           "label": "流量重置方式",
           "placeholder": "请选择重置方式",
@@ -2115,6 +2989,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "success": {
             "add": "套餐添加成功",
             "update": "套餐更新成功"
+          },
+          "error": {
+            "validation": "表单校验失败，请检查并修正错误后重试。"
           }
         }
       },
